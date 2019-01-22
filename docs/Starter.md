@@ -1,4 +1,4 @@
-# Rozgrzewka
+﻿# Rozgrzewka
 
 ## Konfiguracja Git-a
 
@@ -65,9 +65,11 @@
 ---
 
 * Zespół A
-	* osoba A1
-	* osoba A2
+	* Mateusz Gancarczyk, MattPro
+	* Ryszard Siwczyk, eres44
 * Zespół B
+	* Andrzej Sadowski, SadkoSoft
+	* Przemek Karolak, Kemeshp
 * Zespół C 
 * Zespół D 
 * Trener
