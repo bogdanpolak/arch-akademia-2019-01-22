@@ -41,11 +41,11 @@
 | `git add .` | Dodanie wszystkich zmienionych plików oraz wszystkich nowych plików do poczekalni |
 | `git commit -m "Zmieniono plik XYZ"` | Stworzenie nowej rewizji (commit-a) na bazie poczekalni |
 | `git commit -a` | Dodanie wszystkich zmienionych plików do poczekalni oraz stworzenie nowej rewizji (**Uwaga!** Nowe pliki nie zostaną dodane do poczekalni) |
-| `git push` | Wysłanie wszystkich rewizji (commit-ów) do zdalnego repozytorium `upstream` oraz aktualizacja wskaźnika bieżącej gałęzi na rewizję zgodną z lokalnym repozytorium. Uwaga na opcje `--set-upstream` oraz `--force`  |
-| `git fetch` | Pobranie rewizji ze zdalnego repozytorium `upstream`  |
+| `git push` | Wysłanie wszystkich rewizji (commit-ów) do zdalnego repozytorium `origin` oraz aktualizacja wskaźnika bieżącej gałęzi na rewizję zgodną z lokalnym repozytorium. Uwaga na opcje `--set-upstream` oraz `--force`  |
+| `git fetch` | Pobranie rewizji ze zdalnego repozytorium `origin`  |
 | `git merge` | scalenie lokalnego wskaźnika bieżącej gałęzi ze wskaźnikiem zdalnym (*wyjasnić tryb: fast-forward*) |
 | `git pull` | `git fetch` + `git merge` |
-| `git branch --track origin/osoba1` | Włączenie śledzenia wskaźnika zdalnego. Spowoduje "stworzenie" lokalnej gałęzi |
+| `git checkout --track origin/osoba1` | Włączenie śledzenia wskaźnika zdalnego. Spowoduje "stworzenie" lokalnej gałęzi |
 
 
 ## Polecenia porządkowe Git-a
@@ -54,7 +54,7 @@
 | --- | --- |
 | `git reset -- {nazwa pliku}` | Usunięcie pliku z poczekalni |
 | `git reset --hard` | Skasowanie wszystkich zmian w katalogu roboczym i przywrócenie plików roboczych do stanu wskazywanego aktualnie przez głowę `HEAD` |
-| `git reset ver-01` | Przełączenie głowy wskaźnika aktualnej gałęzi na tag o nazwie `ver-01`. Nie zmienia zawartości plików w katalogu roboczym |
+| `git reset ver-01` | Przełączenie wskaźnika aktualnej gałęzi na tag o nazwie `ver-01`. Nie zmienia zawartości plików w katalogu roboczym |
 | `git reset fde6048` | Przestawienie wskaźnika bieżącej gałęzi na rewizję (commit) o ID = `fde6048`. Nie zmienia plików roboczych. |
 | `git reset --hard fde6048` | Jak wyżej, ale zmienia pliki robocze na zgodne z rewizją (kasuje zmiany w katalogu roboczym) |
 
