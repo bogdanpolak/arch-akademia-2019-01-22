@@ -1,15 +1,13 @@
 ﻿unit Form.Main;
-{ TODO 1 : [0]  Check out and remove all compiler warnings and hints }
 
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
-  System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Grids, Vcl.DBGrids, Data.DB,
+  Winapi.Windows, Winapi.Messages,
+  System.SysUtils, System.Variants, System.Classes, System.JSON,
+  Vcl.Forms, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Controls,
   ChromeTabs, ChromeTabsClasses, ChromeTabsTypes,
-  System.JSON,
-  {TODO 3: [D] Resolve dependency on ExtGUI.ListBox.Books. Too tightly coupled}
+  { TODO 3: [D] Resolve dependency on ExtGUI.ListBox.Books. Too tightly coupled }
   // Dependency is requred by attribute TBooksListBoxConfigurator
   ExtGUI.ListBox.Books;
 
@@ -57,15 +55,23 @@ implementation
 {$R *.dfm}
 
 uses
-  System.StrUtils, System.Math, System.DateUtils,
-  System.RegularExpressions,
-  Frame.Welcome, Consts.Application, Utils.CipherAES128, Frame.Import,
-  Utils.General, Data.Main, ClientAPI.Readers, ClientAPI.Books,
+  System.StrUtils, System.Math, System.DateUtils, System.RegularExpressions,
+  Data.DB,
+  Vcl.DBGrids, Vcl.Graphics,
   // TODO 2: [!] FireDAC dependency (requred because of FDManager) (comments below)
   // Should be moved into the DataModule
   FireDAC.Comp.Client,
   // TODO 2: [!] FireDAC dependency (requred because of EFDDBEngineException)
-  FireDAC.Stan.Error;
+  FireDAC.Stan.Error,
+  // ------------------------------------------------------------
+  Consts.Application,
+  Utils.CipherAES128,
+  Utils.General,
+  Data.Main,
+  ClientAPI.Readers,
+  ClientAPI.Books,
+  Frame.Welcome,
+  Frame.Import;
 
 const
   SecureKey = 'delphi-is-the-best';
@@ -131,7 +137,7 @@ end;
 { TODO 2: [Helper] Extract into TDBGrid.ForEachRow class helper }
 function AutoSizeColumns(DBGrid: TDBGrid; const MaxRows: Integer = 25): Integer;
 var
-  DataSet: TDataSet;
+  DataSet: Data.DB.TDataSet;
   Bookmark: TBookmark;
   Count, i: Integer;
   ColumnsWidth: array of Integer;
@@ -599,7 +605,7 @@ begin
     UserName := FireDAC.Comp.Client.FDManager.ConnectionDefs.ConnectionDefByName
       (DataModMain.FDConnection1.ConnectionDefName).Params.UserName;
     password := AES128_Decrypt(SecurePassword, SecureKey);
-    if password='<null>' then
+    if password = '<null>' then
       password := '';
     DataModMain.FDConnection1.Open(UserName, password);
   except
