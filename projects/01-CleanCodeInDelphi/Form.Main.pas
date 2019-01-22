@@ -7,7 +7,7 @@ uses
   System.SysUtils, System.Variants, System.Classes, System.JSON,
   Vcl.Forms, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Controls,
   ChromeTabs, ChromeTabsClasses, ChromeTabsTypes,
-  { TODO 3: [D] Resolve dependency on ExtGUI.ListBox.Books. Too tightly coupled }
+  {TODO 3: [D] Resolve dependency on ExtGUI.ListBox.Books. Too tightly coupled}
   // Dependency is requred by attribute TBooksListBoxConfigurator
   ExtGUI.ListBox.Books;
 
@@ -35,15 +35,10 @@ type
     procedure tmrAppReadyTimer(Sender: TObject);
   private
     FBooksConfig: TBooksListBoxConfigurator;
-    { TODO 1: Meanigfull name needed. If we are in developer mode }
-    FDevMod: Boolean;
-    { TODO 1: Naming convention violation. It's not used .... check it }
-    isDatabaseOK: Boolean;
-    { TODO 1: Meaningful name: AutoSizeBooksGroupBoxes }
-    procedure ResizeGroupBox();
-    { TODO 1: Meaningful name. Check comments in the implementation }
+    FInDeveloperMode: Boolean;
+    procedure ResizeBooksListBoxesInsideGroupBox(aGroupBox: TGroupBox);
     // TODO 3: Move this procedure into class (idea)
-    procedure ValidateBook(jsRow: TJSONObject; email: string;
+    procedure ValidateBookAndGetDateReported(jsRow: TJSONObject; email: string;
       var dtReported: TDateTime);
   end;
 
@@ -80,6 +75,10 @@ const
   // SecurePassword = AES 128 ('<null>',SecureKey)
   SecurePassword = 'EvUlRZOo3hzFEr/IRpHVMA==';
   Client_API_Token = '20be805d-9cea27e2-a588efc5-1fceb84d-9fb4b67c';
+  SQL_GetDatabaseVersion = 'SELECT versionnr FROM DBInfo';
+
+var
+  ShowBooksGrid: Boolean = False;
 
 resourcestring
   SWelcomeScreen = 'Welcome screen';
@@ -100,7 +99,7 @@ end;
 
 procedure TForm1.FormResize(Sender: TObject);
 begin
-  ResizeGroupBox();
+  ResizeBooksListBoxesInsideGroupBox(GroupBox1);
 end;
 
 { TODO 2: [Helper] TWinControl class helper }
@@ -303,7 +302,7 @@ begin
       b.currency := jsBook.Values['currency'].Value;
       b.description := jsBook.Values['description'].Value;
       b.imported := Now();
-      b2 := FBooksConfig.GetBookList(blAll).FindByISBN(b.isbn);
+      b2 := FBooksConfig.GetBookList(blkAll).FindByISBN(b.isbn);
       if not Assigned(b2) then
       begin
         FBooksConfig.InsertNewBook(b);
@@ -406,13 +405,13 @@ begin
       // Validate imported Reader report
       //
       { TODO 2: [E] Move validation up. Before reading data }
-      ValidateBook(jsRow, email, dtReported);
+      ValidateBookAndGetDateReported(jsRow, email, dtReported);
       // ----------------------------------------------------------------
       //
       // Locate book by ISBN
       //
       { TODO 2: [G] Extract method }
-      b := FBooksConfig.GetBookList(blAll).FindByISBN(bookISBN);
+      b := FBooksConfig.GetBookList(blkAll).FindByISBN(bookISBN);
       if not Assigned(b) then
         raise Exception.Create('Invalid book isbn');
       // ----------------------------------------------------------------
@@ -441,11 +440,11 @@ begin
       DataModMain.dsReports.AppendRecord([readerId, bookISBN, rating, oppinion,
         dtReported]);
       // ----------------------------------------------------------------
-      if FDevMod then
+      if FInDeveloperMode then
         Insert([rating.ToString], ss, maxInt);
     end;
     // ----------------------------------------------------------------
-    if FDevMod then
+    if FInDeveloperMode then
       Caption := String.Join(' ,', ss);
     // ----------------------------------------------------------------
     with TSplitter.Create(frm) do
@@ -506,13 +505,12 @@ begin
   //
   // Developer mode id used to change application configuration
   // during test
-  { TODO 1: Meaningful name for FDevMod }
   { TODO 2: [Helper] TApplication.IsDeveloperMode }
 {$IFDEF DEBUG}
   Extention := '.dpr';
   ExeName := ExtractFileName(Application.ExeName);
   ProjectFileName := ChangeFileExt(ExeName, Extention);
-  FDevMod := FileExists(ProjectFileName) or
+  FInDeveloperMode := FileExists(ProjectFileName) or
     FileExists('..\..\' + ProjectFileName);
 {$ELSE}
   FDevMod := False;
@@ -520,29 +518,23 @@ begin
   pnMain.Caption := '';
 end;
 
-procedure TForm1.ResizeGroupBox();
+procedure TForm1.ResizeBooksListBoxesInsideGroupBox(aGroupBox: TGroupBox);
 var
   sum: Integer;
   avaliable: Integer;
   labelPixelHeight: Integer;
 begin
-  { TODO 1: Commented out function. Just delete it }
-  (*
-    sum := lbxBooksAvaliable.Height + lbxBooksCooming.Height;
-    lbxBooksAvaliable.Height := sum div 2;
-    lbxBooksCooming.Height := sum div 2;
-  *)
   { TODO 3: Move into TBooksListBoxConfigurator }
   with TBitmap.Create do
   begin
-    Canvas.Font.Size := GroupBox1.Font.Height;
+    Canvas.Font.Size := aGroupBox.Font.Height;
     labelPixelHeight := Canvas.TextHeight('Zg');
     Free;
   end;
-  sum := SumHeightForChildrens(GroupBox1, [lbxBooksReaded, lbxBooksAvaliable2]);
-  avaliable := GroupBox1.Height - sum - labelPixelHeight;
-  if GroupBox1.AlignWithMargins then
-    avaliable := avaliable - GroupBox1.Padding.Top - GroupBox1.Padding.Bottom;
+  sum := SumHeightForChildrens(aGroupBox, [lbxBooksReaded, lbxBooksAvaliable2]);
+  avaliable := aGroupBox.Height - sum - labelPixelHeight;
+  if aGroupBox.AlignWithMargins then
+    avaliable := avaliable - aGroupBox.Padding.Top - aGroupBox.Padding.Bottom;
   if lbxBooksReaded.AlignWithMargins then
     avaliable := avaliable - lbxBooksReaded.Margins.Top -
       lbxBooksReaded.Margins.Bottom;
@@ -552,8 +544,8 @@ begin
   lbxBooksReaded.Height := avaliable div 2;
 end;
 
-procedure TForm1.ValidateBook(jsRow: TJSONObject; email: string;
-  var dtReported: TDateTime);
+procedure TForm1.ValidateBookAndGetDateReported(jsRow: TJSONObject;
+  email: string; var dtReported: TDateTime);
 begin
   if not CheckEmail(email) then
     raise Exception.Create('Invalid email addres');
@@ -575,9 +567,11 @@ var
   UserName: string;
   password: string;
   res: Variant;
+  datasrc: TDataSource;
+  DataGrid: TDBGrid;
 begin
   tmrAppReady.Enabled := False;
-  if FDevMod then
+  if FInDeveloperMode then
     ReportMemoryLeaksOnShutdown := True;
   // ----------------------------------------------------------
   // ----------------------------------------------------------
@@ -600,7 +594,6 @@ begin
   //
   // TODO 2: [!] Dependency on DataModMain.FDConnection1 (discuss LoD)
   // Move this code into the DataModule
-  isDatabaseOK := False;
   try
     UserName := FireDAC.Comp.Client.FDManager.ConnectionDefs.ConnectionDefByName
       (DataModMain.FDConnection1.ConnectionDefName).Params.UserName;
@@ -625,10 +618,7 @@ begin
     end;
   end;
   try
-    { TODO 1: SQL commands inlined - extract as constants }
-    // SQL_SELELECT: DatabaseVersion
-    res := DataModMain.FDConnection1.ExecSQLScalar
-      ('SELECT versionnr FROM DBInfo');
+    res := DataModMain.FDConnection1.ExecSQLScalar(SQL_GetDatabaseVersion);
   except
     on E: EFDDBEngineException do
     begin
@@ -639,9 +629,7 @@ begin
     end;
   end;
   VersionNr := res;
-  if VersionNr = ExpectedDatabaseVersionNr then
-    isDatabaseOK := True
-  else
+  if VersionNr <> ExpectedDatabaseVersionNr then
   begin
     frm.AddInfo(0, StrNotSupportedDBVersion, True);
     frm.AddInfo(1, 'Oczekiwana wersja bazy: ' +
@@ -667,20 +655,17 @@ begin
   // ----------------------------`------------------------------
   //
   // Create Books Grid for Quality Tests
-  { TODO 1: Commented out function. It's usefull. Define global variable }
-  {
-    if FDevMod then
-    begin
+  if FInDeveloperMode and ShowBooksGrid then
+  begin
     datasrc := TDataSource.Create(frm);
     DataGrid := TDBGrid.Create(frm);
     DataGrid.AlignWithMargins := True;
     DataGrid.Parent := frm;
     DataGrid.Align := alClient;
     DataGrid.DataSource := datasrc;
-    datasrc.DataSet := DataModMain.mtabBooks;
+    datasrc.DataSet := DataModMain.dsBooks;
     AutoSizeColumns(DataGrid);
-    end;
-  }
+  end;
 end;
 
 end.

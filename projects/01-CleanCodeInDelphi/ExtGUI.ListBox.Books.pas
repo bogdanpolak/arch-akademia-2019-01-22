@@ -32,8 +32,7 @@ type
   end;
 
 type
-  { TODO 1: Incorrect prefix. Should be blk }
-  TBookListKind = (blAll, blOnShelf, blAvaliable);
+  TBookListKind = (blkAll, blkOnShelf, blkAvaliable);
 
 type
   { TODO 3: Too many responsibilities. Separate GUI from structures  }
@@ -70,9 +69,6 @@ uses
   DataAccess.Books.FireDAC,
   Data.Main;
 
-const
-  { TODO 1 : [0] Remove const Books_API_Token }
-  Books_API_Token = 'BOOKS-arg58d8jmefcu5-1fceb';
 
 constructor TBooksListBoxConfigurator.Create(AOwner: TComponent);
 var
@@ -109,9 +105,9 @@ function TBooksListBoxConfigurator.GetBookList (kind: TBookListKind):
   TBookCollection;
 begin
   case kind of
-    blAll: Result := FAllBooks;
-    blOnShelf: Result := FBooksOnShelf;
-    blAvaliable: Result := FBooksAvaliable
+    blkAll: Result := FAllBooks;
+    blkOnShelf: Result := FBooksOnShelf;
+    blkAvaliable: Result := FBooksAvaliable
     else raise Exception.Create('Not supported collection type');
   end;
 end;
@@ -282,15 +278,12 @@ end;
 
 function TBookCollection.FindByISBN (const ISBN: string): TBook;
 var
-  i: Integer;
+  book: TBook;
 begin
-  { TODO 1: Dijkstra structural programming rule violation }
-  { TODO 1: More readable code for b in Items do. Shorter method }
-  // Dijkstra: one entrance and one exit
-  for i := 0 to Self.Count-1 do
-    if Self.Items[i].isbn = ISBN then
+  for book in Self do
+    if book.isbn = ISBN then
     begin
-      Result := Self.Items[i];
+      Result := book;
       exit;
     end;
   Result := nil;
