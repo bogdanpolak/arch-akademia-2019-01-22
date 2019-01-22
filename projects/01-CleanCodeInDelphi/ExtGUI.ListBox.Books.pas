@@ -77,7 +77,6 @@ const
 
 constructor TBooksListBoxConfigurator.Create(AOwner: TComponent);
 var
-  OtherBooks: TBookCollection;
   b: TBook;
   BooksDAO: IBooksDAO;
 begin
@@ -107,13 +106,14 @@ begin
   inherited;
 end;
 
-function TBooksListBoxConfigurator.GetBookList (kind: TBookListKind): 
+function TBooksListBoxConfigurator.GetBookList (kind: TBookListKind):
   TBookCollection;
 begin
   case kind of
     blAll: Result := FAllBooks;
     blOnShelf: Result := FBooksOnShelf;
-    blAvaliable: Result := FBooksAvaliable;
+    blAvaliable: Result := FBooksAvaliable
+    else raise Exception.Create('Not supported collection type');
   end;
 end;
 

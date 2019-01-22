@@ -109,16 +109,6 @@ begin
 end;
 
 procedure TDataModMain.OpenDataSets;
-var
-  JSONFileName: string;
-  fname: string;
-  days: integer;
-  half: Int64;
-  ms: TMemoryStream;
-  tab: TFDMemTable;
-  j: integer;
-  recNo: integer;
-  email: string;
 begin
   dsBooks.Open();
   dsReaders.Open();

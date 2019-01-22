@@ -41,14 +41,12 @@ type
     FDevMod: Boolean;
     { TODO 1: Naming convention violation. It's not used .... check it }
     isDatabaseOK: Boolean;
-    { TODO 1: Variable is not used }
-    DragedIdx: Integer;
     { TODO 1: Meaningful name: AutoSizeBooksGroupBoxes }
     procedure ResizeGroupBox();
     { TODO 1: Meaningful name. Check comments in the implementation }
     // TODO 3: Move this procedure into class (idea)
     procedure ValidateBook(jsRow: TJSONObject; email: string;
-      dtReported: TDateTime);
+      var dtReported: TDateTime);
   end;
 
 var
@@ -549,7 +547,7 @@ begin
 end;
 
 procedure TForm1.ValidateBook(jsRow: TJSONObject; email: string;
-  dtReported: TDateTime);
+  var dtReported: TDateTime);
 begin
   if not CheckEmail(email) then
     raise Exception.Create('Invalid email addres');
@@ -571,14 +569,6 @@ var
   UserName: string;
   password: string;
   res: Variant;
-  i: Integer;
-  b: TBook;
-  o: Boolean;
-  AllBooks: TBookCollection;
-  OtherBooks: TBookCollection;
-  booksCfg: TBooksListBoxConfigurator;
-  datasrc: TDataSource;
-  DataGrid: TDBGrid;
 begin
   tmrAppReady.Enabled := False;
   if FDevMod then
