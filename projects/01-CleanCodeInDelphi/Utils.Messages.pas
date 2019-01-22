@@ -1,4 +1,5 @@
 unit Utils.Messages;
+// TODO 4: [C] Remove this unit and migrate to TEventBus pattern
 
 interface
 
@@ -56,7 +57,6 @@ var
   j: integer;
   frame: TFrame;
 begin
-  // TODO 3: Migrate to System.Messaging
   for i := 0 to self.Count - 1 do
   begin
     msg := self.Items[i];

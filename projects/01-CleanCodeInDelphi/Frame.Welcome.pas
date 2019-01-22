@@ -77,7 +77,7 @@ begin
       lbl.Caption := '* ' + FrameMsg.Text
     else
       lbl.Caption := FrameMsg.Text;
-    { TODO 3: Show messages with TagBoolean = false only in DeveloperMode }
+    { TODO 4: Show messages with TagBoolean = false only in DeveloperMode }
     if FrameMsg.TagBoolean = false then
     begin
       lbl.Font.Style := [fsItalic];

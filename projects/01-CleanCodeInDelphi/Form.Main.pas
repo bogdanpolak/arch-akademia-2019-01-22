@@ -7,8 +7,6 @@ uses
   System.SysUtils, System.Variants, System.Classes, System.JSON,
   Vcl.Forms, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Controls,
   ChromeTabs, ChromeTabsClasses, ChromeTabsTypes,
-  {TODO 3: [D] Resolve dependency on ExtGUI.ListBox.Books. Too tightly coupled}
-  // Dependency is requred by attribute TBooksListBoxConfigurator
   ExtGUI.ListBox.Books;
 
 type
@@ -37,7 +35,7 @@ type
     FBooksConfig: TBooksListBoxConfigurator;
     FInDeveloperMode: Boolean;
     procedure ResizeBooksListBoxesInsideGroupBox(aGroupBox: TGroupBox);
-    // TODO 3: Move this procedure into class (idea)
+    // TODO 4: Move this procedure into class (idea)
     procedure ValidateBookAndGetDateReported(jsRow: TJSONObject; email: string;
       var dtReported: TDateTime);
   end;
@@ -102,7 +100,7 @@ begin
   ResizeBooksListBoxesInsideGroupBox(GroupBox1);
 end;
 
-{ TODO 2: [Helper] TWinControl class helper }
+{ TODO 1: [Helper] TWinControl class helper }
 function SumHeightForChildrens(Parent: TWinControl;
   ControlsToExclude: TArray<TControl>): Integer;
 var
@@ -133,7 +131,7 @@ begin
   Result := sumHeight;
 end;
 
-{ TODO 2: [Helper] Extract into TDBGrid.ForEachRow class helper }
+{ TODO 1: [Helper] Extract into TDBGrid.ForEachRow class helper }
 function AutoSizeColumns(DBGrid: TDBGrid; const MaxRows: Integer = 25): Integer;
 var
   DataSet: Data.DB.TDataSet;
@@ -188,7 +186,7 @@ end;
 //
 // Function checks is TJsonObject has field and this field has not null value
 //
-{ TODO 2: [Helper] TJSONObject Class helpper and more minigful name expected }
+{ TODO 1: [Helper] TJSONObject Class helpper and more minigful name expected }
 function fieldAvaliable(jsObject: TJSONObject; const fieldName: string)
   : Boolean; inline;
 begin
@@ -196,7 +194,7 @@ begin
     [fieldName].Null;
 end;
 
-{ TODO 2: [Helper] TJSONObject Class helpper and this method has two responsibilities }
+{ TODO 1: [Helper] TJSONObject Class helpper and this method has two responsibilities }
 // Warning! In-out var parameter
 // extract separate:  GetIsoDateUtc
 function IsValidIsoDateUtc(jsObj: TJSONObject; const Field: string;
@@ -212,7 +210,7 @@ begin
   end
 end;
 
-{ TODO 2: Move into Utils.General }
+{ TODO 1: [cleanups] Move into Utils.General }
 function CheckEmail(const s: string): Boolean;
 const
   EMAIL_REGEX = '^((?>[a-zA-Z\d!#$%&''*+\-/=?^_`{|}~]+\x20*|"((?=[\x01-\x7f])' +
@@ -326,8 +324,8 @@ begin
   // 2. Embed frame in pnMain (show)
   // 3. Add new ChromeTab
   //
-  { TODO 2: [B] Extract method. Read comments and use meaningful }
-  // Look for ChromeTabs1.Tabs.Add for code duplication
+  { TODO 1: [Duplicated code] ChromeTabs1.Tabs.Add . Extract method. }
+  // Read comments above to choose meaningful name
   frm := TFrameImport.Create(pnMain);
   frm.Parent := pnMain;
   frm.Visible := True;
@@ -362,14 +360,14 @@ begin
   try
     for i := 0 to jsData.Count - 1 do
     begin
-      { TODO 3: [A] Extract Reader Report code into the record TReaderReport (model layer) }
+      { TODO 4: [A] Extract Reader Report code into the record TReaderReport (model layer) }
       { TODO 2: [F] Repeated code. Violation of the DRY rule }
       // Use TJSONObject helper Values return Variant.Null
       // ----------------------------------------------------------------
       //
       // Read JSON object
       //
-      { TODO 3: [A] Move this code into record TReaderReport.LoadFromJSON }
+      { TODO 4: [A] Move this code into record TReaderReport.LoadFromJSON }
       jsRow := jsData.Items[i] as TJSONObject;
       email := jsRow.Values['email'].Value;
       if fieldAvaliable(jsRow, 'firstname') then
@@ -478,6 +476,17 @@ begin
   (obj as TFrame).Free;
 end;
 
+{ TODO 1: [Helper] TWinControl class helper }
+procedure HideAllChildFrames(AParenControl: TWinControl);
+var
+  i: Integer;
+begin
+  for i := AParenControl.ControlCount - 1 downto 0 do
+    if AParenControl.Controls[i] is TFrame then
+      (AParenControl.Controls[i] as TFrame).Visible := False;
+end;
+
+
 procedure TForm1.ChromeTabs1Change(Sender: TObject; ATab: TChromeTab;
   TabChangeType: TTabChangeType);
 var
@@ -505,7 +514,7 @@ begin
   //
   // Developer mode id used to change application configuration
   // during test
-  { TODO 2: [Helper] TApplication.IsDeveloperMode }
+  { TODO 1: [Helper] TApplication.IsDeveloperMode }
 {$IFDEF DEBUG}
   Extention := '.dpr';
   ExeName := ExtractFileName(Application.ExeName);
@@ -524,7 +533,11 @@ var
   avaliable: Integer;
   labelPixelHeight: Integer;
 begin
-  { TODO 3: Move into TBooksListBoxConfigurator }
+  { TODO 1: [too complicated]  }
+  // It's enought to do this:
+  //   lbxBooksReaded.Height :=
+  //     (lbxBooksReaded.Height + lbxBooksAvaliable2.Height) div 2;
+  // method SumHeightForChildrens won't be used, but is intersting as a pattern
   with TBitmap.Create do
   begin
     Canvas.Font.Size := aGroupBox.Font.Height;

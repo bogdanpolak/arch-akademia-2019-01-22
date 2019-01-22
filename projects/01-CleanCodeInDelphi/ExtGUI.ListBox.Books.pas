@@ -8,7 +8,7 @@ uses
   System.JSON, System.Generics.Collections,
   DataAccess.Books;
 
-{ TODO 3: [C] Move class into the separate unit: Model.Book.pas }
+{ TODO 4: [B] Move class into the separate unit: Model.Book.pas }
 // with or without Book Collection?
 type
   TBook = class
@@ -35,7 +35,7 @@ type
   TBookListKind = (blkAll, blkOnShelf, blkAvaliable);
 
 type
-  { TODO 3: Too many responsibilities. Separate GUI from structures  }
+  { TODO 4: Too many responsibilities. Separate GUI from structures  }
   // Split into 2 classes TBooksContainer TListBoxesForBooks
   // Add new unit: Model.Books.pas
   TBooksListBoxConfigurator = class(TComponent)
@@ -78,7 +78,7 @@ begin
   inherited;
   // ---------------------------------------------------
   FAllBooks := TBookCollection.Create();
-  { TODO 3: Discuss how to remove this dependency. Check implentation uses }
+  { TODO 5: Discuss how to remove this dependency. Check implentation uses }
   BooksDAO := GetBooks_FireDAC(DataModMain.dsBooks);
   FAllBooks.LoadDataSet(BooksDAO);
   // ---------------------------------------------------
@@ -115,7 +115,7 @@ end;
 procedure TBooksListBoxConfigurator.InsertNewBook(b: TBook);
 begin
   FAllBooks.Add(b);
-  { TODO 2: [A] Code duplication, look on the TBooksListBoxConfigurator.Create }
+  { TODO 1: [Duplicated code] constructor TBooksListBoxConfigurator.Create }
   if b.status = 'on-shelf' then
     FBooksOnShelf.Add(b)
   else if b.status = 'avaliable' then
@@ -135,8 +135,8 @@ var
 begin
   FListBoxOnShelf := lbxOnShelf;
   FListBoxAvaliable := lbxAvaliable;
-  { TODO 2: Repeated code. Violation of the DRY rule }
-  // New private method: SetupListBox
+  { TODO 1: [Duplicated code] DRY }
+  // New private method: CoonfigureBookListBox
   // -----------------------------------------------------------------
   // ListBox: books on the shelf
   for b in FBooksOnShelf do
