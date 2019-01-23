@@ -20,7 +20,8 @@ uses
   ClientAPI.Readers in 'api\ClientAPI.Readers.pas',
   ExtGUI.ListBox.Books in 'ExtGUI.ListBox.Books.pas',
   Helper.TApplication in 'Helper.TApplication.pas',
-  Helper.TWinControl in 'Helper.TWinControl.pas';
+  Helper.TWinControl in 'Helper.TWinControl.pas',
+  Helper.TJSONObject in 'Helper.TJSONObject.pas';
 
 {$R *.res}
 

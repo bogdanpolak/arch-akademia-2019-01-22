@@ -64,7 +64,7 @@ uses
   ClientAPI.Readers,
   ClientAPI.Books,
   Frame.Welcome,
-  Frame.Import, Helper.TApplication, Helper.TWinControl;
+  Frame.Import, Helper.TApplication, Helper.TWinControl, Helper.TJSONObject;
 
 const
   SecureKey = 'delphi-is-the-best';
@@ -149,34 +149,6 @@ begin
       Inc(Count, ColumnsWidth[i]);
     end;
   Result := Count - DBGrid.ClientWidth;
-end;
-
-// ----------------------------------------------------------
-//
-// Function checks is TJsonObject has field and this field has not null value
-//
-{ TODO 1: [Helper] TJSONObject Class helpper and more minigful name expected }
-function fieldAvaliable(jsObject: TJSONObject; const fieldName: string)
-  : Boolean; inline;
-begin
-  Result := Assigned(jsObject.Values[fieldName]) and not jsObject.Values
-    [fieldName].Null;
-end;
-
-{ TODO 1: [Helper] TJSONObject Class helpper and this method has two responsibilities }
-// Warning! In-out var parameter
-// extract separate:  GetIsoDateUtc
-function IsValidIsoDateUtc(jsObj: TJSONObject; const Field: string;
-  var dt: TDateTime): Boolean;
-begin
-  dt := 0;
-  try
-    dt := System.DateUtils.ISO8601ToDate(jsObj.Values[Field].Value, False);
-    Result := True;
-  except
-    on E: Exception do
-      Result := False;
-  end
 end;
 
 function BooksToDateTime(const s: string): TDateTime;
@@ -310,31 +282,31 @@ begin
       { TODO 4: [A] Move this code into record TReaderReport.LoadFromJSON }
       jsRow := jsData.Items[i] as TJSONObject;
       email := jsRow.Values['email'].Value;
-      if fieldAvaliable(jsRow, 'firstname') then
+      if jsRow.FieldAvaliable('firstname') then
         firstName := jsRow.Values['firstname'].Value
       else
         firstName := '';
-      if fieldAvaliable(jsRow, 'lastname') then
+      if jsRow.FieldAvaliable('lastname') then
         lastName := jsRow.Values['lastname'].Value
       else
         lastName := '';
-      if fieldAvaliable(jsRow, 'company') then
+      if jsRow.FieldAvaliable('company') then
         company := jsRow.Values['company'].Value
       else
         company := '';
-      if fieldAvaliable(jsRow, 'book-isbn') then
+      if jsRow.FieldAvaliable('book-isbn') then
         bookISBN := jsRow.Values['book-isbn'].Value
       else
         bookISBN := '';
-      if fieldAvaliable(jsRow, 'book-title') then
+      if jsRow.FieldAvaliable('book-title') then
         bookTitle := jsRow.Values['book-title'].Value
       else
         bookTitle := '';
-      if fieldAvaliable(jsRow, 'rating') then
+      if jsRow.FieldAvaliable('rating') then
         rating := (jsRow.Values['rating'] as TJSONNumber).AsInt
       else
         rating := -1;
-      if fieldAvaliable(jsRow, 'oppinion') then
+      if jsRow.FieldAvaliable('oppinion') then
         oppinion := jsRow.Values['oppinion'].Value
       else
         oppinion := '';
@@ -472,7 +444,7 @@ procedure TForm1.ValidateBookAndGetDateReported(jsRow: TJSONObject;
 begin
   if not CheckEmail(email) then
     raise Exception.Create('Invalid email addres');
-  if not IsValidIsoDateUtc(jsRow, 'created', dtReported) then
+  if not jsRow.IsValidIsoDateUtc('created', dtReported) then
     raise Exception.Create('Invalid date. Expected ISO format');
 end;
 
