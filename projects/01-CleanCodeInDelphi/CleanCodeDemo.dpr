@@ -19,7 +19,8 @@ uses
   ClientAPI.Books in 'api\ClientAPI.Books.pas',
   ClientAPI.Readers in 'api\ClientAPI.Readers.pas',
   ExtGUI.ListBox.Books in 'ExtGUI.ListBox.Books.pas',
-  Helper.DataSet in 'Helper.DataSet.pas';
+  Helper.DataSet in 'Helper.DataSet.pas',
+  Helper.TDBGrid in 'Helper.TDBGrid.pas';
 
 {$R *.res}
 

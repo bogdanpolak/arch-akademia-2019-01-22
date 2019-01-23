@@ -39,7 +39,8 @@ type
     // TODO 4: Move this procedure into class (idea)
     procedure ValidateBookAndGetDateReported(jsRow: TJSONObject; email: string;
       var dtReported: TDateTime);
-    function AddChromeTabAndCreateFrame(AFrameClass: TFrameClass; ACaption: string): TFrame;
+    function AddChromeTabAndCreateFrame(AFrameClass: TFrameClass;
+      ACaption: string): TFrame;
   end;
 
 var
@@ -65,7 +66,9 @@ uses
   ClientAPI.Readers,
   ClientAPI.Books,
   Frame.Welcome,
-  Frame.Import, Helper.DataSet;
+  Frame.Import,
+  Helper.DataSet,
+  Helper.TDBGrid;
 
 const
   SecureKey = 'delphi-is-the-best';
@@ -133,61 +136,62 @@ begin
 end;
 
 { TODO 1: [Helper] Extract into TDBGrid.ForEachRow class helper }
-function AutoSizeColumns(DBGrid: TDBGrid; const MaxRows: Integer = 25): Integer;
-var
+{
+  function AutoSizeColumns(DBGrid: TDBGrid; const MaxRows: Integer = 25): Integer;
+  var
   DataSet: Data.DB.TDataSet;
   Bookmark: TBookmark;
   Count, i: Integer;
   ColumnsWidth: array of Integer;
-begin
+  begin
   SetLength(ColumnsWidth, DBGrid.Columns.Count);
   for i := 0 to DBGrid.Columns.Count - 1 do
-    if DBGrid.Columns[i].Visible then
-      ColumnsWidth[i] := DBGrid.Canvas.TextWidth
-        (DBGrid.Columns[i].title.Caption + '   ')
-    else
-      ColumnsWidth[i] := 0;
-  if DBGrid.DataSource <> nil then
-    DataSet := DBGrid.DataSource.DataSet
+  if DBGrid.Columns[i].Visible then
+  ColumnsWidth[i] := DBGrid.Canvas.TextWidth
+  (DBGrid.Columns[i].title.Caption + '   ')
   else
-    DataSet := nil;
+  ColumnsWidth[i] := 0;
+  if DBGrid.DataSource <> nil then
+  DataSet := DBGrid.DataSource.DataSet
+  else
+  DataSet := nil;
   if (DataSet <> nil) and DataSet.Active then
   begin
-    Bookmark := DataSet.GetBookmark;
-    DataSet.DisableControls;
-    try
-      Count := 0;
-      DataSet.First;
-      while not DataSet.Eof and (Count < MaxRows) do
-      begin
-        for i := 0 to DBGrid.Columns.Count - 1 do
-          if DBGrid.Columns[i].Visible then
-            ColumnsWidth[i] := Max(ColumnsWidth[i],
-              DBGrid.Canvas.TextWidth(DBGrid.Columns[i].Field.Text + '   '));
-        Inc(Count);
-        DataSet.Next;
-      end;
-    finally
-      DataSet.GotoBookmark(Bookmark);
-      DataSet.FreeBookmark(Bookmark);
-      DataSet.EnableControls;
-    end;
+  Bookmark := DataSet.GetBookmark;
+  DataSet.DisableControls;
+  try
+  Count := 0;
+  DataSet.First;
+  while not DataSet.Eof and (Count < MaxRows) do
+  begin
+  for i := 0 to DBGrid.Columns.Count - 1 do
+  if DBGrid.Columns[i].Visible then
+  ColumnsWidth[i] := Max(ColumnsWidth[i],
+  DBGrid.Canvas.TextWidth(DBGrid.Columns[i].Field.Text + '   '));
+  Inc(Count);
+  DataSet.Next;
+  end;
+  finally
+  DataSet.GotoBookmark(Bookmark);
+  DataSet.FreeBookmark(Bookmark);
+  DataSet.EnableControls;
+  end;
   end;
   Count := 0;
   for i := 0 to DBGrid.Columns.Count - 1 do
-    if DBGrid.Columns[i].Visible then
-    begin
-      DBGrid.Columns[i].Width := ColumnsWidth[i];
-      Inc(Count, ColumnsWidth[i]);
-    end;
+  if DBGrid.Columns[i].Visible then
+  begin
+  DBGrid.Columns[i].Width := ColumnsWidth[i];
+  Inc(Count, ColumnsWidth[i]);
+  end;
   Result := Count - DBGrid.ClientWidth;
-end;
-
-// ----------------------------------------------------------
-//
-// Function checks is TJsonObject has field and this field has not null value
-//
-{ TODO 1: [Helper] TJSONObject Class helpper and more minigful name expected }
+  end;
+  )
+  // ----------------------------------------------------------
+  //
+  // Function checks is TJsonObject has field and this field has not null value
+  //
+  { TODO 1: [Helper] TJSONObject Class helpper and more minigful name expected }
 function fieldAvaliable(jsObject: TJSONObject; const fieldName: string)
   : Boolean; inline;
 begin
@@ -319,7 +323,8 @@ begin
   DBGrid1.Align := alClient;
   DBGrid1.DataSource := DataSrc1;
   DataSrc1.DataSet := DataModMain.dsReaders;
-  AutoSizeColumns(DBGrid1);
+  // AutoSizeColumns(DBGrid1);
+  DBGrid1.AutoSizeColumns();
   // ----------------------------------------------------------
   // ----------------------------------------------------------
   //
@@ -432,7 +437,8 @@ begin
     DBGrid2.DataSource := DataSrc2;
     DataSrc2.DataSet := DataModMain.dsReports;
     DBGrid2.Margins.Top := 0;
-    AutoSizeColumns(DBGrid2);
+    // AutoSizeColumns(DBGrid2);
+    DBGrid2.AutoSizeColumns();
   finally
     jsData.Free;
   end;
@@ -456,7 +462,6 @@ begin
     if AParenControl.Controls[i] is TFrame then
       (AParenControl.Controls[i] as TFrame).Visible := False;
 end;
-
 
 procedure TForm1.ChromeTabs1Change(Sender: TObject; ATab: TChromeTab;
   TabChangeType: TTabChangeType);
@@ -504,10 +509,10 @@ var
   avaliable: Integer;
   labelPixelHeight: Integer;
 begin
-  { TODO 1: [too complicated]  }
+  { TODO 1: [too complicated] }
   // It's enought to do this:
-  //   lbxBooksReaded.Height :=
-  //     (lbxBooksReaded.Height + lbxBooksAvaliable2.Height) div 2;
+  // lbxBooksReaded.Height :=
+  // (lbxBooksReaded.Height + lbxBooksAvaliable2.Height) div 2;
   // method SumHeightForChildrens won't be used, but is intersting as a pattern
   with TBitmap.Create do
   begin
@@ -538,7 +543,8 @@ begin
 end;
 
 // TODO 99: Usunąć z klasy TForm1 (Form.Main.pas)
-function TForm1.AddChromeTabAndCreateFrame(AFrameClass: TFrameClass; ACaption: string): TFrame;
+function TForm1.AddChromeTabAndCreateFrame(AFrameClass: TFrameClass;
+  ACaption: string): TFrame;
 var
   tab: TChromeTab;
 begin
@@ -651,7 +657,8 @@ begin
     DataGrid.Align := alClient;
     DataGrid.DataSource := datasrc;
     datasrc.DataSet := DataModMain.dsBooks;
-    AutoSizeColumns(DataGrid);
+    // AutoSizeColumns(DataGrid);
+    DataGrid.AutoSizeColumns();
   end;
 end;
 
