@@ -393,8 +393,7 @@ begin
       if VarIsNull(readerId) then
       begin
         { TODO 2: [G] Extract method }
-        readerId := DataModMain.GetMaxValueInDataSet(DataModMain.dsReaders,
-          'ReaderId') + 1;
+        readerId := DataModMain.dsReaders.GetMaxValue('ReaderId') + 1;
         //
         // Fields: ReaderId, FirstName, LastName, Email, Company, BooksRead,
         // LastReport, ReadersCreated
