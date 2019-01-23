@@ -20,7 +20,10 @@ uses
   ClientAPI.Readers in 'api\ClientAPI.Readers.pas',
   ExtGUI.ListBox.Books in 'ExtGUI.ListBox.Books.pas',
   Helper.DataSet in 'Helper.DataSet.pas',
-  Helper.TDBGrid in 'Helper.TDBGrid.pas';
+  Helper.TDBGrid in 'Helper.TDBGrid.pas',
+  Helper.TApplication in 'Helper.TApplication.pas',
+  Helper.TWinControl in 'Helper.TWinControl.pas',
+  Helper.TJSONObject in 'Helper.TJSONObject.pas';
 
 {$R *.res}
 
