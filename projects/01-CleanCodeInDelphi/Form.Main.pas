@@ -65,7 +65,7 @@ uses
   ClientAPI.Readers,
   ClientAPI.Books,
   Frame.Welcome,
-  Frame.Import;
+  Frame.Import, Helper.DataSet;
 
 const
   SecureKey = 'delphi-is-the-best';
