@@ -34,7 +34,6 @@ type
     procedure tmrAppReadyTimer(Sender: TObject);
   private
     FBooksConfig: TBooksListBoxConfigurator;
-    FInDeveloperMode: Boolean;
     procedure ResizeBooksListBoxesInsideGroupBox(aGroupBox: TGroupBox);
     // TODO 4: Move this procedure into class (idea)
     procedure ValidateBookAndGetDateReported(jsRow: TJSONObject; email: string;
@@ -65,7 +64,7 @@ uses
   ClientAPI.Readers,
   ClientAPI.Books,
   Frame.Welcome,
-  Frame.Import;
+  Frame.Import, Helper.TApplication, Helper.TWinControl;
 
 const
   SecureKey = 'delphi-is-the-best';
@@ -99,37 +98,6 @@ end;
 procedure TForm1.FormResize(Sender: TObject);
 begin
   ResizeBooksListBoxesInsideGroupBox(GroupBox1);
-end;
-
-{ TODO 1: [Helper] TWinControl class helper }
-function SumHeightForChildrens(Parent: TWinControl;
-  ControlsToExclude: TArray<TControl>): Integer;
-var
-  i: Integer;
-  ctrl: Vcl.Controls.TControl;
-  isExcluded: Boolean;
-  j: Integer;
-  sumHeight: Integer;
-  ctrlHeight: Integer;
-begin
-  sumHeight := 0;
-  for i := 0 to Parent.ControlCount - 1 do
-  begin
-    ctrl := Parent.Controls[i];
-    isExcluded := False;
-    for j := 0 to Length(ControlsToExclude) - 1 do
-      if ControlsToExclude[j] = ctrl then
-        isExcluded := True;
-    if not isExcluded then
-    begin
-      if ctrl.AlignWithMargins then
-        ctrlHeight := ctrl.Height + ctrl.Margins.Top + ctrl.Margins.Bottom
-      else
-        ctrlHeight := ctrl.Height;
-      sumHeight := sumHeight + ctrlHeight;
-    end;
-  end;
-  Result := sumHeight;
 end;
 
 { TODO 1: [Helper] Extract into TDBGrid.ForEachRow class helper }
@@ -410,11 +378,11 @@ begin
       DataModMain.dsReports.AppendRecord([readerId, bookISBN, rating, oppinion,
         dtReported]);
       // ----------------------------------------------------------------
-      if FInDeveloperMode then
+      if Application.IsDeveloperMode then
         Insert([rating.ToString], ss, maxInt);
     end;
     // ----------------------------------------------------------------
-    if FInDeveloperMode then
+    if Application.IsDeveloperMode then
       Caption := String.Join(' ,', ss);
     // ----------------------------------------------------------------
     with TSplitter.Create(frm) do
@@ -448,17 +416,6 @@ begin
   (obj as TFrame).Free;
 end;
 
-{ TODO 1: [Helper] TWinControl class helper }
-procedure HideAllChildFrames(AParenControl: TWinControl);
-var
-  i: Integer;
-begin
-  for i := AParenControl.ControlCount - 1 downto 0 do
-    if AParenControl.Controls[i] is TFrame then
-      (AParenControl.Controls[i] as TFrame).Visible := False;
-end;
-
-
 procedure TForm1.ChromeTabs1Change(Sender: TObject; ATab: TChromeTab;
   TabChangeType: TTabChangeType);
 var
@@ -469,33 +426,14 @@ begin
     obj := TObject(ATab.Data);
     if (TabChangeType = tcActivated) and Assigned(obj) then
     begin
-      HideAllChildFrames(pnMain);
+      pnMain.HideAllChildFrames;
       (obj as TFrame).Visible := True;
     end;
   end;
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
-var
-  Extention: string;
-  ExeName: string;
-  ProjectFileName: string;
 begin
-  // ----------------------------------------------------------
-  // Check: If we are in developer mode
-  //
-  // Developer mode id used to change application configuration
-  // during test
-  { TODO 1: [Helper] TApplication.IsDeveloperMode }
-{$IFDEF DEBUG}
-  Extention := '.dpr';
-  ExeName := ExtractFileName(Application.ExeName);
-  ProjectFileName := ChangeFileExt(ExeName, Extention);
-  FInDeveloperMode := FileExists(ProjectFileName) or
-    FileExists('..\..\' + ProjectFileName);
-{$ELSE}
-  FDevMod := False;
-{$ENDIF}
   pnMain.Caption := '';
 end;
 
@@ -516,7 +454,7 @@ begin
     labelPixelHeight := Canvas.TextHeight('Zg');
     Free;
   end;
-  sum := SumHeightForChildrens(aGroupBox, [lbxBooksReaded, lbxBooksAvaliable2]);
+  sum := aGroupBox.SumHeightForChildrens([lbxBooksReaded, lbxBooksAvaliable2]);
   avaliable := aGroupBox.Height - sum - labelPixelHeight;
   if aGroupBox.AlignWithMargins then
     avaliable := avaliable - aGroupBox.Padding.Top - aGroupBox.Padding.Bottom;
@@ -570,7 +508,7 @@ var
   DataGrid: TDBGrid;
 begin
   tmrAppReady.Enabled := False;
-  if FInDeveloperMode then
+  if Application.IsDeveloperMode then
     ReportMemoryLeaksOnShutdown := True;
   // ----------------------------------------------------------
   frm := AddChromeTabAndCreateFrame(TFrameWelcome, 'Welcome') as TFrameWelcome;
@@ -643,7 +581,7 @@ begin
   // ----------------------------`------------------------------
   //
   // Create Books Grid for Quality Tests
-  if FInDeveloperMode and ShowBooksGrid then
+  if Application.IsDeveloperMode and ShowBooksGrid then
   begin
     datasrc := TDataSource.Create(frm);
     DataGrid := TDBGrid.Create(frm);
