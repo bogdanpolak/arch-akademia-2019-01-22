@@ -77,9 +77,6 @@ var
   frm: TFrameImport;
   jsData: TJSONArray;
   DBGrid1: TDBGrid;
-  DataSrc1: TDataSource;
-  DBGrid2: TDBGrid;
-  DataSrc2: TDataSource;
   i: Integer;
   jsRow: TJSONObject;
   email: string;
@@ -91,7 +88,6 @@ var
   rating: Integer;
   oppinion: string;
   ss: array of string;
-  v: string;
   dtReported: TDateTime;
   readerId: Variant;
   b: TBook;
@@ -161,34 +157,13 @@ begin
       { TODO 4: [A] Move this code into record TReaderReport.LoadFromJSON }
       jsRow := jsData.Items[i] as TJSONObject;
       email := jsRow.Values['email'].Value;
-      if jsRow.FieldAvaliable('firstname') then
-        firstName := jsRow.Values['firstname'].Value
-      else
-        firstName := '';
-      if jsRow.FieldAvaliable('lastname') then
-        lastName := jsRow.Values['lastname'].Value
-      else
-        lastName := '';
-      if jsRow.FieldAvaliable('company') then
-        company := jsRow.Values['company'].Value
-      else
-        company := '';
-      if jsRow.FieldAvaliable('book-isbn') then
-        bookISBN := jsRow.Values['book-isbn'].Value
-      else
-        bookISBN := '';
-      if jsRow.FieldAvaliable('book-title') then
-        bookTitle := jsRow.Values['book-title'].Value
-      else
-        bookTitle := '';
-      if jsRow.FieldAvaliable('rating') then
-        rating := (jsRow.Values['rating'] as TJSONNumber).AsInt
-      else
-        rating := -1;
-      if jsRow.FieldAvaliable('oppinion') then
-        oppinion := jsRow.Values['oppinion'].Value
-      else
-        oppinion := '';
+      firstName := jsRow.GetPairValueAsString('firstname');
+      lastName := jsRow.GetPairValueAsString('lastname');
+      company := jsRow.GetPairValueAsString('company');
+      bookISBN := jsRow.GetPairValueAsString('book-isbn');
+      bookTitle := jsRow.GetPairValueAsString('book-title');
+      rating := jsRow.GetPairValueAsInteger('rating');
+      oppinion := jsRow.GetPairValueAsString('oppinion');
       // ----------------------------------------------------------------
       //
       // Validate imported Reader report
@@ -270,7 +245,9 @@ procedure TImportFromWebService.ValidateBookAndGetDateReported(jsRow: TJSONObjec
 begin
   if not CheckEmail(email) then
     raise Exception.Create('Invalid email addres');
-  if not jsRow.IsValidIsoDateUtc('created', dtReported) then
+  if jsRow.IsValidIsoDateUtc('created') then
+    dtReported := jsRow.GetPairValueAsUtcDate('created')
+  else
     raise Exception.Create('Invalid date. Expected ISO format');
 end;
 

@@ -1,16 +1,28 @@
-// Autor: Ryszard
-//
 unit Helper.TDBGrid;
 
 interface
 
 uses
-
-  Vcl.DBGrids, Data.DB, System.Math;
+  Data.DB,
+  System.Classes,
+  System.Math,
+  Vcl.DBGrids;
 
 type
   TDBGridHelper = class helper for TDBGrid
   public
+    /// <summary>
+    /// Funkcja przegl¹da ustaln¹ liczbê wierszy DataSet-a pod³¹czonego
+    /// do DBGrid-a i dla ka¿dego wiesza wylicza maksymaln¹ szrokoœæ
+    /// kolumny w pikselach.
+    /// </summary>
+    /// <param name="MaxRow">
+    /// Maksymalna liczba wierszy w DataSet-cie, dla których wyliczana
+    /// jest szerokoœæ kolumn. Domyœlnie = 25 wierszy
+    /// </param>
+    /// <returns>
+    /// Opisaæ wynik funkcji
+    /// </returns>
     function AutoSizeColumns(const MaxRows: Integer = 25): Integer;
   end;
 
@@ -30,34 +42,37 @@ begin
         (Self.Columns[i].title.Caption + '   ')
     else
       ColumnsWidth[i] := 0;
-
   if Self.DataSource <> nil then
     DataSet := Self.DataSource.DataSet
   else
     DataSet := nil;
-
   if (DataSet <> nil) and DataSet.Active then
   begin
     Bookmark := DataSet.GetBookmark;
-    DataSet.DisableControls;
     try
-      Count := 0;
-      DataSet.First;
-      while not DataSet.Eof and (Count < MaxRows) do
-      begin
-        for i := 0 to Self.Columns.Count - 1 do
-          if Self.Columns[i].Visible then
-            ColumnsWidth[i] := Max(ColumnsWidth[i],
-              Self.Canvas.TextWidth(Self.Columns[i].Field.Text + '   '));
-        Inc(Count);
-        DataSet.Next;
+      DataSet.DisableControls;
+      try
+        Count := 0;
+        DataSet.First;
+        while not DataSet.Eof and (Count < MaxRows) do
+        begin
+          for i := 0 to Self.Columns.Count - 1 do
+            if Self.Columns[i].Visible then
+              ColumnsWidth[i] := Max(ColumnsWidth[i],
+                Self.Canvas.TextWidth(Self.Columns[i].Field.Text + '   '));
+          Inc(Count);
+          DataSet.Next;
+        end;
+      finally
+        DataSet.EnableControls;
       end;
     finally
-      DataSet.GotoBookmark(Bookmark);
+      if DataSet.BookmarkValid(Bookmark) then
+        DataSet.GotoBookmark(Bookmark);
       DataSet.FreeBookmark(Bookmark);
-      DataSet.EnableControls;
     end;
   end;
+  // TODO: Opisaæ wynik
   Count := 0;
   for i := 0 to Self.Columns.Count - 1 do
     if Self.Columns[i].Visible then
