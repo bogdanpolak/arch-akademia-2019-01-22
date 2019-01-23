@@ -34,9 +34,6 @@ type
   public
     procedure OpenDataSets;
     function FindReaderByEmil(const email: string): Variant;
-    { TODO 1: [Helper] Extract into TDataSet helper. This pollutes the Data Module public API }
-    function GetMaxValueInDataSet(DataSet: TDataSet;
-      const fieldName: string): integer;
   end;
 
 var
@@ -62,24 +59,6 @@ begin
     Result := System.Variants.Null()
 end;
 
-function TDataModMain.GetMaxValueInDataSet(DataSet: TDataSet;
-  const fieldName: string): integer;
-var
-  v: integer;
-begin
-  { TODO 1: [Helper] Extract into TDataSet.ForEachRow class helper }
-  Result := 0;
-  DataSet.DisableControls;
-  DataSet.First;
-  while not DataSet.Eof do
-  begin
-    v := DataSet.FieldByName(fieldName).AsInteger;
-    if v > Result then
-      Result := v;
-    DataSet.Next;
-  end;
-  DataSet.EnableControls;
-end;
 
 procedure TDataModMain.OpenDataSets;
 begin
