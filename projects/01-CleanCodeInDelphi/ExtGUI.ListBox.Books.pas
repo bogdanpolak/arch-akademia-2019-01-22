@@ -28,14 +28,14 @@ type
   TBookCollection = class(TObjectList<TBook>)
   public
     procedure LoadDataSet(BooksDAO: IBooksDAO);
-    function FindByISBN (const ISBN: string): TBook;
+    function FindByISBN(const isbn: string): TBook;
   end;
 
 type
   TBookListKind = (blkAll, blkOnShelf, blkAvaliable);
 
 type
-  { TODO 4: Too many responsibilities. Separate GUI from structures  }
+  { TODO 4: Too many responsibilities. Separate GUI from structures }
   // Split into 2 classes TBooksContainer TListBoxesForBooks
   // Add new unit: Model.Books.pas
   TBooksListBoxConfigurator = class(TComponent)
@@ -52,14 +52,17 @@ type
       State: TDragState; var Accept: Boolean);
     procedure EventOnDrawItem(Control: TWinControl; Index: integer; Rect: TRect;
       State: TOwnerDrawState);
+    procedure AddBookToAvaliableOrOnShelfLits(b: TBook);
+    procedure ConfigureBookListBox(ABookList: TBookCollection;
+      AListBox: TListBox);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     { TODO 3: Introduce 3 properties: ListBoxOnShelf, ListBoxAvaliable, Books }
     procedure PrepareListBoxes(lbxOnShelf, lbxAvaliable: TListBox);
-    function GetBookList (kind: TBookListKind): TBookCollection; 
-    function FindBook (isbn: string): TBook;
-    procedure InsertNewBook (b:TBook);
+    function GetBookList(kind: TBookListKind): TBookCollection;
+    function FindBook(isbn: string): TBook;
+    procedure InsertNewBook(b: TBook);
   end;
 
 implementation
@@ -68,7 +71,6 @@ uses
   System.SysUtils,
   DataAccess.Books.FireDAC,
   Data.Main;
-
 
 constructor TBooksListBoxConfigurator.Create(AOwner: TComponent);
 var
@@ -85,12 +87,7 @@ begin
   FBooksOnShelf := TBookCollection.Create(false);
   FBooksAvaliable := TBookCollection.Create(false);
   for b in FAllBooks do
-  begin
-    if b.status = 'on-shelf' then
-      FBooksOnShelf.Add(b)
-    else if b.status = 'avaliable' then
-      FBooksAvaliable.Add(b)
-  end;
+    AddBookToAvaliableOrOnShelfLits(b);
 end;
 
 destructor TBooksListBoxConfigurator.Destroy;
@@ -101,64 +98,64 @@ begin
   inherited;
 end;
 
-function TBooksListBoxConfigurator.GetBookList (kind: TBookListKind):
-  TBookCollection;
+function TBooksListBoxConfigurator.GetBookList(kind: TBookListKind)
+  : TBookCollection;
 begin
   case kind of
-    blkAll: Result := FAllBooks;
-    blkOnShelf: Result := FBooksOnShelf;
-    blkAvaliable: Result := FBooksAvaliable
-    else raise Exception.Create('Not supported collection type');
+    blkAll:
+      Result := FAllBooks;
+    blkOnShelf:
+      Result := FBooksOnShelf;
+    blkAvaliable:
+      Result := FBooksAvaliable
+  else
+    raise Exception.Create('Not supported collection type');
   end;
 end;
 
 procedure TBooksListBoxConfigurator.InsertNewBook(b: TBook);
 begin
   FAllBooks.Add(b);
-  { TODO 1: [Duplicated code] constructor TBooksListBoxConfigurator.Create }
+  AddBookToAvaliableOrOnShelfLits(b);
+  FListBoxAvaliable.AddItem(b.title, b);
+end;
+
+procedure TBooksListBoxConfigurator.ConfigureBookListBox
+  (ABookList: TBookCollection; AListBox: TListBox);
+var
+  b: TBook;
+begin
+  for b in ABookList do
+    AListBox.AddItem(b.title, b);
+  AListBox.OnDragDrop := EventOnDragDrop;
+  AListBox.OnDragOver := EventOnDragOver;
+  AListBox.OnStartDrag := EventOnStartDrag;
+  AListBox.OnDrawItem := EventOnDrawItem;
+  AListBox.Style := lbOwnerDrawFixed;
+  AListBox.DragMode := dmAutomatic;
+  AListBox.ItemHeight := 50;
+end;
+
+procedure TBooksListBoxConfigurator.AddBookToAvaliableOrOnShelfLits(b: TBook);
+begin
   if b.status = 'on-shelf' then
     FBooksOnShelf.Add(b)
   else if b.status = 'avaliable' then
     FBooksAvaliable.Add(b);
-  FListBoxAvaliable.AddItem(b.title,b);
 end;
 
-function TBooksListBoxConfigurator.FindBook (isbn: string): TBook;
+function TBooksListBoxConfigurator.FindBook(isbn: string): TBook;
 begin
-  Result := FAllBooks.FindByISBN (isbn);
+  Result := FAllBooks.FindByISBN(isbn);
 end;
 
 procedure TBooksListBoxConfigurator.PrepareListBoxes(lbxOnShelf,
   lbxAvaliable: TListBox);
-var
-  b: TBook;
 begin
   FListBoxOnShelf := lbxOnShelf;
   FListBoxAvaliable := lbxAvaliable;
-  { TODO 1: [Duplicated code] DRY }
-  // New private method: CoonfigureBookListBox
-  // -----------------------------------------------------------------
-  // ListBox: books on the shelf
-  for b in FBooksOnShelf do
-    FListBoxOnShelf.AddItem(b.title, b);
-  FListBoxOnShelf.OnDragDrop := EventOnDragDrop;
-  FListBoxOnShelf.OnDragOver := EventOnDragOver;
-  FListBoxOnShelf.OnStartDrag := EventOnStartDrag;
-  FListBoxOnShelf.OnDrawItem := EventOnDrawItem;
-  FListBoxOnShelf.Style := lbOwnerDrawFixed;
-  FListBoxOnShelf.DragMode := dmAutomatic;
-  FListBoxOnShelf.ItemHeight := 50;
-  // -----------------------------------------------------------------
-  // ListBox: books avaliable
-  for b in FBooksAvaliable do
-    FListBoxAvaliable.AddItem(b.title, b);
-  FListBoxAvaliable.OnDragDrop := EventOnDragDrop;
-  FListBoxAvaliable.OnDragOver := EventOnDragOver;
-  FListBoxAvaliable.OnStartDrag := EventOnStartDrag;
-  FListBoxAvaliable.OnDrawItem := EventOnDrawItem;
-  FListBoxAvaliable.Style := lbOwnerDrawFixed;
-  FListBoxAvaliable.DragMode := dmAutomatic;
-  FListBoxAvaliable.ItemHeight := 50;
+  ConfigureBookListBox(FBooksOnShelf, lbxOnShelf);
+  ConfigureBookListBox(FBooksAvaliable, lbxAvaliable);
 end;
 
 procedure TBooksListBoxConfigurator.EventOnStartDrag(Sender: TObject;
@@ -276,12 +273,12 @@ begin
     end);
 end;
 
-function TBookCollection.FindByISBN (const ISBN: string): TBook;
+function TBookCollection.FindByISBN(const isbn: string): TBook;
 var
   book: TBook;
 begin
-  for book in Self do
-    if book.isbn = ISBN then
+  for book in self do
+    if book.isbn = isbn then
     begin
       Result := book;
       exit;

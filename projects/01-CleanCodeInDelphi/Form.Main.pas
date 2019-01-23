@@ -7,6 +7,7 @@ uses
   System.SysUtils, System.Variants, System.Classes, System.JSON,
   Vcl.Forms, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Controls,
   ChromeTabs, ChromeTabsClasses, ChromeTabsTypes,
+  Utils.General,
   ExtGUI.ListBox.Books;
 
 type
@@ -38,6 +39,7 @@ type
     // TODO 4: Move this procedure into class (idea)
     procedure ValidateBookAndGetDateReported(jsRow: TJSONObject; email: string;
       var dtReported: TDateTime);
+    function AddChromeTabAndCreateFrame(AFrameClass: TFrameClass; ACaption: string): TFrame;
   end;
 
 var
@@ -48,7 +50,7 @@ implementation
 {$R *.dfm}
 
 uses
-  System.StrUtils, System.Math, System.DateUtils, System.RegularExpressions,
+  System.StrUtils, System.Math, System.DateUtils,
   Data.DB,
   Vcl.DBGrids, Vcl.Graphics,
   // TODO 2: [!] FireDAC dependency (requred because of FDManager) (comments below)
@@ -59,7 +61,6 @@ uses
   // ------------------------------------------------------------
   Consts.Application,
   Utils.CipherAES128,
-  Utils.General,
   Data.Main,
   ClientAPI.Readers,
   ClientAPI.Books,
@@ -210,20 +211,6 @@ begin
   end
 end;
 
-{ TODO 1: [cleanups] Move into Utils.General }
-function CheckEmail(const s: string): Boolean;
-const
-  EMAIL_REGEX = '^((?>[a-zA-Z\d!#$%&''*+\-/=?^_`{|}~]+\x20*|"((?=[\x01-\x7f])' +
-    '[^"\\]|\\[\x01-\x7f])*"\x20*)*(?<angle><))?((?!\.)' +
-    '(?>\.?[a-zA-Z\d!#$%&''*+\-/=?^_`{|}~]+)+|"((?=[\x01-\x7f])' +
-    '[^"\\]|\\[\x01-\x7f])*")@(((?!-)[a-zA-Z\d\-]+(?<!-)\.)+[a-zA-Z]' +
-    '{2,}|\[(((?(?<!\[)\.)(25[0-5]|2[0-4]\d|[01]?\d?\d))' +
-    '{4}|[a-zA-Z\d\-]*[a-zA-Z\d]:((?=[\x01-\x7f])[^\\\[\]]|\\' +
-    '[\x01-\x7f])+)\])(?(angle)>)$';
-begin
-  Result := System.RegularExpressions.TRegEx.IsMatch(s, EMAIL_REGEX);
-end;
-
 function BooksToDateTime(const s: string): TDateTime;
 const
   months: array [1 .. 12] of string = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -251,7 +238,6 @@ end;
 procedure TForm1.btnImportClick(Sender: TObject);
 var
   frm: TFrameImport;
-  tab: TChromeTab;
   jsData: TJSONArray;
   DBGrid1: TDBGrid;
   DataSrc1: TDataSource;
@@ -318,21 +304,7 @@ begin
   end;
   // ----------------------------------------------------------
   // ----------------------------------------------------------
-  //
-  // Create new frame, show it add to ChromeTabs
-  // 1. Create TFrameImport.
-  // 2. Embed frame in pnMain (show)
-  // 3. Add new ChromeTab
-  //
-  { TODO 1: [Duplicated code] ChromeTabs1.Tabs.Add . Extract method. }
-  // Read comments above to choose meaningful name
-  frm := TFrameImport.Create(pnMain);
-  frm.Parent := pnMain;
-  frm.Visible := True;
-  frm.Align := alClient;
-  tab := ChromeTabs1.Tabs.Add;
-  tab.Caption := 'Readers';
-  tab.Data := frm;
+  frm := AddChromeTabAndCreateFrame(TFrameImport, 'Readers') as TFrameImport;
   // ----------------------------------------------------------
   // ----------------------------------------------------------
   //
@@ -566,6 +538,20 @@ begin
     raise Exception.Create('Invalid date. Expected ISO format');
 end;
 
+// TODO 99: Usunąć z klasy TForm1 (Form.Main.pas)
+function TForm1.AddChromeTabAndCreateFrame(AFrameClass: TFrameClass; ACaption: string): TFrame;
+var
+  tab: TChromeTab;
+begin
+  Result := AFrameClass.Create(pnMain);
+  Result.Parent := pnMain;
+  Result.Visible := True;
+  Result.Align := alClient;
+  tab := ChromeTabs1.Tabs.Add;
+  tab.Caption := ACaption;
+  tab.Data := Result;
+end;
+
 procedure TForm1.Splitter1Moved(Sender: TObject);
 begin
   (Sender as TSplitter).Tag := 1;
@@ -587,18 +573,7 @@ begin
   if FInDeveloperMode then
     ReportMemoryLeaksOnShutdown := True;
   // ----------------------------------------------------------
-  // ----------------------------------------------------------
-  //
-  // Create and show Welcome Frame
-  //
-  { TODO 2: [B] Extract method. Read comments and use meaningful }
-  frm := TFrameWelcome.Create(pnMain);
-  frm.Parent := pnMain;
-  frm.Visible := True;
-  frm.Align := alClient;
-  tab := ChromeTabs1.Tabs.Add;
-  tab.Caption := 'Welcome';
-  tab.Data := frm;
+  frm := AddChromeTabAndCreateFrame(TFrameWelcome, 'Welcome') as TFrameWelcome;
   // ----------------------------------------------------------
   // ----------------------------------------------------------
   //
