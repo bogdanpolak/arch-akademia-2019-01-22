@@ -23,7 +23,8 @@ uses
   Helper.TDBGrid in 'Helper.TDBGrid.pas',
   Helper.TApplication in 'Helper.TApplication.pas',
   Helper.TWinControl in 'Helper.TWinControl.pas',
-  Helper.TJSONObject in 'Helper.TJSONObject.pas';
+  Helper.TJSONObject in 'Helper.TJSONObject.pas',
+  Action.ImportFromWebService in 'Action.ImportFromWebService.pas';
 
 {$R *.res}
 
