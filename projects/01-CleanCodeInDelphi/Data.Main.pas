@@ -81,6 +81,8 @@ resourcestring
   SDBErrorSelect = 'Can''t execute SELECT command on the database';
   StrNotSupportedDBVersion = 'Not supported database version. Please' +
     ' update database structures.';
+  StrExpectedDatabseVersion = 'Oczekiwana wersja bazy: ';
+  StrAktualDatabseVersion = 'Aktualna wersja bazy: ';
 
 procedure TDataModMain.ConnectToDataBase;
 var
@@ -108,6 +110,7 @@ begin
       end;
       LogInfo(0, msg1, True);
       LogInfo(1, E.Message, False);
+      Raise
     end;
   end;
 end;
@@ -148,7 +151,7 @@ begin
       Msg := IfThen(E.kind = ekObjNotExists, SDBRequireCreate, SDBErrorSelect);
       LogInfo(0, Msg, True);
       LogInfo(1, E.Message, False);
-      exit;
+      Raise;
     end;
   end;
 end;
@@ -161,9 +164,9 @@ begin
   if VersionNr <> ExpectedDatabaseVersionNr then
   begin
     LogInfo(0, StrNotSupportedDBVersion, True);
-    LogInfo(1, 'Oczekiwana wersja bazy: ' + DBVersionToString
+    LogInfo(1, StrExpectedDatabseVersion + DBVersionToString
       (ExpectedDatabaseVersionNr), True);
-    LogInfo(1, 'Aktualna wersja bazy: ' + DBVersionToString(VersionNr), True);
+    LogInfo(1, StrAktualDatabseVersion + DBVersionToString(VersionNr), True);
   end;
 end;
 
