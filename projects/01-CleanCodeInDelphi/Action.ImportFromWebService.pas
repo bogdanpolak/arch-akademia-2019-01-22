@@ -8,7 +8,8 @@ uses
   System.Classes,
   System.SysUtils,
   ExtGUI.ListBox.Books,
-  Data.Main;
+  Data.Main,
+  Model.Book;
 
 type
   TImportFromWebService = class (TComponent)

@@ -5,34 +5,10 @@ interface
 uses
   System.Classes, Vcl.StdCtrls, Vcl.Controls, System.Types, Vcl.Graphics,
   Winapi.Windows,
-  System.JSON, System.Generics.Collections,
-  DataAccess.Books;
-
-{ TODO 4: [B] Move class into the separate unit: Model.Book.pas }
-// with or without Book Collection?
-type
-  TBook = class
-    status: string;
-    title: string;
-    isbn: string;
-    author: string;
-    releseDate: TDateTime;
-    pages: integer;
-    price: currency;
-    currency: string;
-    imported: TDateTime;
-    description: string;
-    constructor Create(Books: IBooksDAO); overload;
-  end;
-
-  TBookCollection = class(TObjectList<TBook>)
-  public
-    procedure LoadDataSet(BooksDAO: IBooksDAO);
-    function FindByISBN(const isbn: string): TBook;
-  end;
-
-type
-  TBookListKind = (blkAll, blkOnShelf, blkAvaliable);
+  System.JSON,
+  DataAccess.Books,
+  Model.Book,
+  Model.BookCollection;
 
 type
   { TODO 4: Too many responsibilities. Separate GUI from structures }
@@ -260,47 +236,6 @@ begin
   DrawText(ACanvas.Handle, PChar(s), Length(s), r2,
     // DT_LEFT or DT_WORDBREAK or DT_CALCRECT);
     DT_LEFT or DT_WORDBREAK);
-end;
-
-{ TBookCollection }
-
-procedure TBookCollection.LoadDataSet(BooksDAO: IBooksDAO);
-begin
-  BooksDAO.ForEach(
-    procedure(Books: IBooksDAO)
-    begin
-      self.Add(TBook.Create(Books));
-    end);
-end;
-
-function TBookCollection.FindByISBN(const isbn: string): TBook;
-var
-  book: TBook;
-begin
-  for book in self do
-    if book.isbn = isbn then
-    begin
-      Result := book;
-      exit;
-    end;
-  Result := nil;
-end;
-
-{ TBook }
-
-constructor TBook.Create(Books: IBooksDAO);
-begin
-  inherited Create;
-  self.isbn := Books.fldISBN.Value;
-  self.title := Books.fldTitle.Value;
-  self.author := Books.fldAuthors.Value;
-  self.status := Books.fldStatus.Value;
-  self.releseDate := Books.fldReleseDate.Value;
-  self.pages := Books.fldPages.Value;
-  self.price := Books.fldPrice.Value;
-  self.currency := Books.fldCurrency.Value;
-  self.imported := Books.fldImported.Value;
-  self.description := Books.fldDescription.Value;
 end;
 
 end.

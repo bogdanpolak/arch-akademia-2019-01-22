@@ -206,7 +206,8 @@ begin
   // ----------------------------------------------------------
   frm := AddChromeTabAndCreateFrame(TFrameWelcome, 'Welcome') as TFrameWelcome;
   // ----------------------------------------------------------
-  DataModMain.VerifyAndConnectToDatabase( frm );
+  DataModMain.OnLogInfo := frm.AddInfo;
+  DataModMain.VerifyAndConnectToDatabase;
   // ----------------------------------------------------------
   // ----------------------------------------------------------
   //
