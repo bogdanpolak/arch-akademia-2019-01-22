@@ -99,6 +99,7 @@ begin
   //
   // Import new Books data from OpenAPI
   //
+
   { TODO 2: [A] Extract method. Read comments and use meaningful name }
   jsBooks := ImportBooksFromWebService(Client_API_Token);
   try
