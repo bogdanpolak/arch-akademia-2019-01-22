@@ -74,9 +74,7 @@ const
 
 procedure TImportFromWebService.Execute;
 var
-  frm: TFrameImport;
   jsData: TJSONArray;
-  DBGrid1: TDBGrid;
   i: Integer;
   jsRow: TJSONObject;
   email: string;

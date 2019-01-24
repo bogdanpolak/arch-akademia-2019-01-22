@@ -20,15 +20,12 @@ type
     /// Maksymalna liczba wierszy w DataSet-cie, dla których wyliczana
     /// jest szerokoœæ kolumn. Domyœlnie = 25 wierszy
     /// </param>
-    /// <returns>
-    /// Opisaæ wynik funkcji
-    /// </returns>
-    function AutoSizeColumns(const MaxRows: Integer = 25): Integer;
+    procedure AutoSizeColumns(const MaxRows: Integer = 25);
   end;
 
 implementation
 
-function TDBGridHelper.AutoSizeColumns(const MaxRows: Integer = 25): Integer;
+procedure TDBGridHelper.AutoSizeColumns(const MaxRows: Integer = 25);
 var
   DataSet: Data.DB.TDataSet;
   Bookmark: TBookmark;
@@ -72,15 +69,6 @@ begin
       DataSet.FreeBookmark(Bookmark);
     end;
   end;
-  // TODO: Opisaæ wynik
-  Count := 0;
-  for i := 0 to Self.Columns.Count - 1 do
-    if Self.Columns[i].Visible then
-    begin
-      Self.Columns[i].Width := ColumnsWidth[i];
-      Inc(Count, ColumnsWidth[i]);
-    end;
-  Result := Count - Self.ClientWidth;
 end;
 
 end.
