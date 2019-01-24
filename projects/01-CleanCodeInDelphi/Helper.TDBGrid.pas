@@ -69,6 +69,9 @@ begin
       DataSet.FreeBookmark(Bookmark);
     end;
   end;
+  for i := 0 to Self.Columns.Count - 1 do
+    if Self.Columns[i].Visible then
+      Self.Columns[i].Width := ColumnsWidth[i];
 end;
 
 end.
