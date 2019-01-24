@@ -5,6 +5,7 @@ object DataModMain: TDataModMain
   object FDConnection1: TFDConnection
     Params.Strings = (
       'ConnectionDef=SQLite_Books')
+    Connected = True
     LoginPrompt = False
     Left = 32
     Top = 8

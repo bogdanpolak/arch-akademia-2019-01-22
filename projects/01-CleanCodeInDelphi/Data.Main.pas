@@ -42,6 +42,9 @@ type
     function FindReaderByEmil(const email: string): Variant;
   end;
 
+const
+  Client_API_Token = '20be805d-9cea27e2-a588efc5-1fceb84d-9fb4b67c';
+
 var
   DataModMain: TDataModMain;
 
@@ -136,9 +139,10 @@ begin
   if VersionNr <> ExpectedDatabaseVersionNr then
   begin
     LogInfo(frm, 0, StrNotSupportedDBVersion, True);
-    LogInfo(frm, 1, 'Oczekiwana wersja bazy: ' + DBVersionToString
-      (ExpectedDatabaseVersionNr), True);
-    LogInfo(frm, 1, 'Aktualna wersja bazy: ' + DBVersionToString(VersionNr), True);
+    LogInfo(frm, 1, 'Oczekiwana wersja bazy: ' +
+      DBVersionToString(ExpectedDatabaseVersionNr), True);
+    LogInfo(frm, 1, 'Aktualna wersja bazy: ' +
+      DBVersionToString(VersionNr), True);
   end;
   // ----------------------------------------------------------
   // ----------------------------------------------------------
@@ -161,7 +165,7 @@ procedure TDataModMain.LogInfo(frm: TFrameWelcome; level: Integer;
   const Msg: string; show: boolean);
 begin
   // TODO: Rozwi¹zaæ zale¿noœæ od TWelcomeFrame
-  frm.AddInfo(level,Msg, show);
+  frm.AddInfo(level, Msg, show);
 end;
 
 procedure TDataModMain.OpenDataSets;
