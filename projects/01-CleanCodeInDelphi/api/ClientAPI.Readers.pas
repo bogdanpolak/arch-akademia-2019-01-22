@@ -5,14 +5,14 @@ interface
 uses
   System.JSON;
 
-function ImportReaderReportsFromWebService (const token:string): TJSONArray;
+function ImportReaderReportsFromWebService(const token: string): TJSONArray;
 
 implementation
 
 uses
   System.SysUtils, System.IOUtils;
 
-function GetContactsFromService (const token:string): TJSONValue;
+function GetContactsFromService(const token: string): TJSONValue;
 var
   JSONFileName: string;
   fname: string;
@@ -29,7 +29,7 @@ begin
   Result := TJSONObject.ParseJSONValue(FileContent);
 end;
 
-function ImportReaderReportsFromWebService (const token:string): TJSONArray;
+function ImportReaderReportsFromWebService (const token: string): TJSONArray;
 var
   jsValue: TJSONValue;
 begin

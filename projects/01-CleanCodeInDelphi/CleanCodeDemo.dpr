@@ -24,7 +24,10 @@ uses
   Helper.TApplication in 'Helper.TApplication.pas',
   Helper.TWinControl in 'Helper.TWinControl.pas',
   Helper.TJSONObject in 'Helper.TJSONObject.pas',
-  Action.ImportFromWebService in 'Action.ImportFromWebService.pas';
+  Helper.Variant in 'Helper.Variant.pas',
+  Action.ImportFromWebService in 'Action.ImportFromWebService.pas',
+  Model.Book in 'Model.Book.pas',
+  Model.BookCollection in 'Model.BookCollection.pas';
 
 {$R *.res}
 

@@ -21,9 +21,8 @@ uses
   FireDAC.Comp.DataSet, FireDAC.DatS, FireDAC.DApt.Intf,
   FireDAC.DApt, FireDAC.Stan.Async,
   // ------------------------------------------------------------------------
-  Utils.Messages,
-  // TODO: [!!!] Usun¹æ zale¿noœæ od Frame.Welcome
-  Frame.Welcome;
+  Utils.General,
+  Utils.Messages;
 
 type
   TDataModMain = class(TDataModule)
@@ -33,12 +32,18 @@ type
     dsReports: TFDQuery;
     FDPhysSQLiteDriverLink1: TFDPhysSQLiteDriverLink;
   private
+    FOnLogInfo: TNotifyLogInfo;
     function DBVersionToString(VerDB: Integer): string;
-    procedure LogInfo(frm: TFrameWelcome; level: Integer; const Msg: string;
+    procedure LogInfo(level: Integer; const Msg: string;
       show: boolean);
-  public
     procedure OpenDataSets;
-    procedure VerifyAndConnectToDatabase(frm: TFrameWelcome);
+    procedure SetOnLogInfo(const Value: TNotifyLogInfo);
+    procedure ConnectToDataBase;
+    function GetDatabaseVersion: Variant;
+    procedure LogDatabaseVersion;
+  public
+    property OnLogInfo: TNotifyLogInfo read FOnLogInfo write SetOnLogInfo;
+    procedure VerifyAndConnectToDatabase;
     function FindReaderByEmil(const email: string): Variant;
   end;
 
@@ -76,35 +81,22 @@ resourcestring
   SDBErrorSelect = 'Can''t execute SELECT command on the database';
   StrNotSupportedDBVersion = 'Not supported database version. Please' +
     ' update database structures.';
+  StrExpectedDatabseVersion = 'Oczekiwana wersja bazy: ';
+  StrAktualDatabseVersion = 'Aktualna wersja bazy: ';
 
-function TDataModMain.DBVersionToString(VerDB: Integer): string;
-begin
-  Result := (VerDB div 1000).ToString + '.' + (VerDB mod 1000).ToString;
-end;
-
-procedure TDataModMain.VerifyAndConnectToDatabase(frm: TFrameWelcome);
+procedure TDataModMain.ConnectToDataBase;
 var
   UserName: String;
   password: String;
   msg1: String;
-  VersionNr: Variant;
-  res: Variant;
 begin
-  // ----------------------------------------------------------
-  // ----------------------------------------------------------
-  //
-  // Connect to database server
-  // Check application user and database structure (DB version)
-  //
-  // TODO 2: [!] Dependency on DataModMain.FDConnection1 (discuss LoD)
-  // Move this code into the DataModule
   try
     UserName := FireDAC.Comp.Client.FDManager.ConnectionDefs.ConnectionDefByName
-      (DataModMain.FDConnection1.ConnectionDefName).Params.UserName;
+      (FDConnection1.ConnectionDefName).Params.UserName;
     password := AES128_Decrypt(SecurePassword, SecureKey);
     if password = '<null>' then
       password := '';
-    DataModMain.FDConnection1.Open(UserName, password);
+    FDConnection1.Open(UserName, password);
   except
     on E: FireDAC.Stan.Error.EFDDBEngineException do
     begin
@@ -116,34 +108,24 @@ begin
       else
         msg1 := SDBConnectionError
       end;
-      LogInfo(frm, 0, msg1, True);
-      LogInfo(frm, 1, E.Message, False);
-      exit;
+      LogInfo(0, msg1, True);
+      LogInfo(1, E.Message, False);
+      Raise
     end;
   end;
-  try
-    res := DataModMain.FDConnection1.ExecSQLScalar(SQL_GetDatabaseVersion);
-  except
-    on E: EFDDBEngineException do
-    begin
-      msg1 := IfThen(E.kind = ekObjNotExists, SDBRequireCreate, SDBErrorSelect);
-      LogInfo(frm, 0, msg1, True);
-      LogInfo(frm, 1, E.Message, False);
-      exit;
-    end;
-  end;
-  VersionNr := res;
-  if VersionNr <> ExpectedDatabaseVersionNr then
-  begin
-    LogInfo(frm, 0, StrNotSupportedDBVersion, True);
-    LogInfo(frm, 1, 'Oczekiwana wersja bazy: ' + DBVersionToString
-      (ExpectedDatabaseVersionNr), True);
-    LogInfo(frm, 1, 'Aktualna wersja bazy: ' + DBVersionToString(VersionNr), True);
-  end;
+end;
+
+function TDataModMain.DBVersionToString(VerDB: Integer): string;
+begin
+  Result := (VerDB div 1000).ToString + '.' + (VerDB mod 1000).ToString;
+end;
+
+procedure TDataModMain.VerifyAndConnectToDatabase;
+begin
+  ConnectToDatabase;
+  LogDatabaseVersion;
   // ----------------------------------------------------------
-  // ----------------------------------------------------------
-  //
-  DataModMain.OpenDataSets;
+  OpenDataSets;
 end;
 
 function TDataModMain.FindReaderByEmil(const email: string): Variant;
@@ -157,11 +139,42 @@ begin
     Result := System.Variants.Null()
 end;
 
-procedure TDataModMain.LogInfo(frm: TFrameWelcome; level: Integer;
+function TDataModMain.GetDatabaseVersion: Variant;
+var
+  Msg: string;
+begin
+  try
+    Result := FDConnection1.ExecSQLScalar(SQL_GetDatabaseVersion);
+  except
+    on E: EFDDBEngineException do
+    begin
+      Msg := IfThen(E.kind = ekObjNotExists, SDBRequireCreate, SDBErrorSelect);
+      LogInfo(0, Msg, True);
+      LogInfo(1, E.Message, False);
+      Raise;
+    end;
+  end;
+end;
+
+procedure TDataModMain.LogDatabaseVersion;
+var
+  VersionNr: Variant;
+begin
+  VersionNr := GetDatabaseVersion;
+  if VersionNr <> ExpectedDatabaseVersionNr then
+  begin
+    LogInfo(0, StrNotSupportedDBVersion, True);
+    LogInfo(1, StrExpectedDatabseVersion + DBVersionToString
+      (ExpectedDatabaseVersionNr), True);
+    LogInfo(1, StrAktualDatabseVersion + DBVersionToString(VersionNr), True);
+  end;
+end;
+
+procedure TDataModMain.LogInfo(level: Integer;
   const Msg: string; show: boolean);
 begin
-  // TODO: Rozwi¹zaæ zale¿noœæ od TWelcomeFrame
-  frm.AddInfo(level,Msg, show);
+  if Assigned(OnLogInfo) then
+    OnLogInfo(Level, Msg, Show);
 end;
 
 procedure TDataModMain.OpenDataSets;
@@ -169,6 +182,11 @@ begin
   dsBooks.Open();
   dsReaders.Open();
   dsReports.Open();
+end;
+
+procedure TDataModMain.SetOnLogInfo(const Value: TNotifyLogInfo);
+begin
+  FOnLogInfo := Value;
 end;
 
 end.
