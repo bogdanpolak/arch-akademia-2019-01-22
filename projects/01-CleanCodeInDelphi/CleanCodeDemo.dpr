@@ -28,7 +28,8 @@ uses
   Action.ImportFromWebService in 'Action.ImportFromWebService.pas',
   Model.Book in 'Model.Book.pas',
   Model.BookCollection in 'Model.BookCollection.pas',
-  Model.ReaderReport in 'Model.ReaderReport.pas';
+  Model.ReaderReport in 'Model.ReaderReport.pas',
+  Messaging.EventBus in 'Messaging.EventBus.pas';
 
 {$R *.res}
 

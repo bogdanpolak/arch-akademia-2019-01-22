@@ -69,7 +69,7 @@ uses
   Helper.TDBGrid,
   Helper.TApplication,
   Helper.TWinControl,
-  Helper.TJSONObject;
+  Helper.TJSONObject, Messaging.EventBus;
 
 
 var
@@ -207,6 +207,8 @@ begin
   frm := AddChromeTabAndCreateFrame(TFrameWelcome, 'Welcome') as TFrameWelcome;
   // ----------------------------------------------------------
   DataModMain.OnLogInfo := frm.AddInfo;
+
+
   DataModMain.VerifyAndConnectToDatabase;
   // ----------------------------------------------------------
   // ----------------------------------------------------------

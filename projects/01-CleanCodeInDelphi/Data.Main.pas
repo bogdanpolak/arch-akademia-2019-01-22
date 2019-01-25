@@ -60,7 +60,7 @@ uses
   System.StrUtils,
   ClientAPI.Books,
   Utils.CipherAES128,
-  Consts.Application;
+  Consts.Application, Messaging.EventBus;
 
 const
   SecureKey = 'delphi-is-the-best';
@@ -172,9 +172,18 @@ end;
 
 procedure TDataModMain.LogInfo(level: Integer;
   const Msg: string; show: boolean);
+  var
+  AMessage: TEventMessage;
 begin
-  if Assigned(OnLogInfo) then
-    OnLogInfo(Level, Msg, Show);
+  //if Assigned(OnLogInfo) then
+  //  OnLogInfo(Level, Msg, Show);
+    // To poslac event
+  AMessage.TagString := Msg;
+  AMessage.TagInt := Level;
+  AMessage.TagBoolean := Show;
+
+  TEventBus._Post(EB_BOARD_ShowLog, AMessage);
+
 end;
 
 procedure TDataModMain.OpenDataSets;

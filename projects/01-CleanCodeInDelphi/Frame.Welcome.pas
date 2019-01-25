@@ -7,7 +7,8 @@ uses
   System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
   Vcl.StdCtrls,
   Vcl.ExtCtrls,
-  Utils.Messages;
+  Utils.Messages,
+  Messaging.EventBus;
 
 type
   TFrameWelcome = class(TFrame)
@@ -25,6 +26,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure AddInfo(level: integer; const Msg: string; show: boolean);
+    procedure ShowInfo(MessageID: integer; const AMessagee: TEventMessage);
   end;
 
 implementation
@@ -51,12 +53,27 @@ begin
   inherited;
   MessageManager := TMessages.Create;
   MessageManager.RegisterListener(self);
+  TEventBus._Register(EB_BOARD_ShowLog, ShowInfo);
 end;
 
 destructor TFrameWelcome.Destroy;
 begin
   inherited;
   MessageManager.Free;
+  TEventBus._Unregister(EB_BOARD_ShowLog, ShowInfo);
+end;
+
+procedure TFrameWelcome.ShowInfo(MessageID: integer;
+  const AMessagee: TEventMessage);
+var
+  obj: TMyMessage;
+begin
+  obj := TMyMessage.Create;
+  obj.Text := AMessagee.TagString;
+  obj.TagInteger := AMessagee.TagInt;
+  obj.TagBoolean := AMessagee.TagBoolean;
+  MessageManager.Add(obj);
+  MessageManager.ProcessMessages;
 end;
 
 procedure TFrameWelcome.OnMessage(var Msg: TMessage);
@@ -91,7 +108,7 @@ end;
 
 procedure TFrameWelcome.tmrFrameReadyTimer(Sender: TObject);
 begin
-  tmrFrameReady.Enabled := False;
+  tmrFrameReady.Enabled := false;
   lbAppName.Caption := Consts.Application.ApplicationName;
   lbAppVersion.Caption := Consts.Application.ApplicationVersion;
 end;
