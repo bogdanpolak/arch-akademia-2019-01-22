@@ -10,7 +10,8 @@ uses
   Utils.General,
   Messaging.EventBus,
   ExtGUI.ListBox.Books,
-  Action.ImportFromWebService;
+  Action.ImportFromWebService,
+  Plus.TWork;
 
 type
   TForm1 = class(TForm)
@@ -27,7 +28,6 @@ type
     Splitter2: TSplitter;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure btnImportClick(Sender: TObject);
     procedure ChromeTabs1ButtonCloseTabClick(Sender: TObject; ATab: TChromeTab;
       var Close: Boolean);
     procedure ChromeTabs1Change(Sender: TObject; ATab: TChromeTab;
@@ -37,12 +37,13 @@ type
     procedure tmrAppReadyTimer(Sender: TObject);
   private
     FBooksConfig: TBooksListBoxConfigurator;
-    ImportFromWebService: TImportFromWebService;
-    procedure OnImportReaderReportLog (MessageID: integer;
+    actImportFromWebService: TWorkAction;
+    procedure OnImportReaderReportLog(MessageID: integer;
       const AMessagee: TEventMessage);
     procedure ResizeBooksListBoxesInsideGroupBox(aGroupBox: TGroupBox);
     function AddChromeTabAndCreateFrame(AFrameClass: TFrameClass;
       ACaption: string): TFrame;
+    procedure OnWorkFDone(Sender: TObject; Work: TWork);
   end;
 
 var
@@ -73,22 +74,36 @@ uses
   Helper.TDBGrid,
   Helper.TApplication,
   Helper.TWinControl,
-  Helper.TJSONObject;
-
+  Helper.TJSONObject, Work.ImportBooks, Work.ImportReadReports;
 
 var
   ShowBooksGrid: Boolean = False;
 
 procedure TForm1.FormCreate(Sender: TObject);
+var
+  w1: TWork;
+  w2: TWork;
 begin
-  ImportFromWebService := TImportFromWebService.Create(Self);
   pnMain.Caption := '';
-  TEventBus._Register(EB_ImportReaderReports_LogInfo,OnImportReaderReportLog);
+  TEventBus._Register(EB_ImportReaderReports_LogInfo, OnImportReaderReportLog);
+
+  FBooksConfig := TBooksListBoxConfigurator.Create(Self);
+
+  actImportFromWebService := TWorkAction.Create(Self);
+  actImportFromWebService.Caption := 'Import';
+  btnImport.Action := actImportFromWebService;
+
+  w1 := actImportFromWebService.CreateAndAddWork(TImportBooksWork);
+  w2 := actImportFromWebService.CreateAndAddWork(TImportReadReportsWork);
+  (w1 as TImportBooksWork).BooksConfig := FBooksConfig;
+  (w2 as TImportReadReportsWork).BooksConfig := FBooksConfig;
+  actImportFromWebService.OnWorkDone := OnWorkFDone;
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
 begin
-  TEventBus._Unregister(EB_ImportReaderReports_LogInfo,OnImportReaderReportLog);
+  TEventBus._Unregister(EB_ImportReaderReports_LogInfo,
+    OnImportReaderReportLog);
 end;
 
 procedure TForm1.FormResize(Sender: TObject);
@@ -97,12 +112,12 @@ begin
 end;
 
 procedure TForm1.OnImportReaderReportLog(MessageID: integer;
-      const AMessagee: TEventMessage);
+  const AMessagee: TEventMessage);
 begin
   Caption := AMessagee.TagString;
 end;
 
-procedure TForm1.btnImportClick(Sender: TObject);
+procedure TForm1.OnWorkFDone(Sender: TObject; Work: TWork);
 var
   frm: TFrameImport;
   DataSrc1: TDataSource;
@@ -110,10 +125,6 @@ var
   DataSrc2: TDataSource;
   DBGrid2: TDBGrid;
 begin
-  ImportFromWebService.BooksConfig := FBooksConfig;
-  ImportFromWebService.DataModMain := DataModMain;
-  ImportFromWebService.Execute;
-
   // ----------------------------------------------------------
   // ----------------------------------------------------------
   frm := AddChromeTabAndCreateFrame(TFrameImport, 'Readers') as TFrameImport;
@@ -219,7 +230,6 @@ begin
   frm := AddChromeTabAndCreateFrame(TFrameWelcome, 'Welcome') as TFrameWelcome;
   // ----------------------------------------------------------
 
-
   DataModMain.VerifyAndConnectToDatabase;
   // ----------------------------------------------------------
   // ----------------------------------------------------------
@@ -229,7 +239,6 @@ begin
   // * Setup drag&drop functionality for two list boxes
   // * Setup OwnerDraw mode
   //
-  FBooksConfig := TBooksListBoxConfigurator.Create(Self);
   FBooksConfig.PrepareListBoxes(lbxBooksReaded, lbxBooksAvaliable2);
   // ----------------------------------------------------------
   // ----------------------------------------------------------

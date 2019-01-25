@@ -28,14 +28,17 @@ uses
   Model.Book in 'Model.Book.pas',
   Model.BookCollection in 'Model.BookCollection.pas',
   Model.ReaderReport in 'Model.ReaderReport.pas',
-  Messaging.EventBus in 'Messaging.EventBus.pas';
+  Messaging.EventBus in 'Messaging.EventBus.pas',
+  Plus.TWork in 'Plus.TWork.pas',
+  Work.ImportReadReports in 'Work.ImportReadReports.pas',
+  Work.ImportBooks in 'Work.ImportBooks.pas';
 
 {$R *.res}
 
 begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
-  Application.CreateForm(TForm1, Form1);
   Application.CreateForm(TDataModMain, DataModMain);
+  Application.CreateForm(TForm1, Form1);
   Application.Run;
 end.
