@@ -16,29 +16,36 @@ type
     /// Pobiera tekstow¹ (TJSONString) wartoœæ pary z kluczem "Key". Sprawdza
     /// czy para jest dostêpna.
     /// </summary>
-    function GetPairValueAsString(const Key: string): String;
+    function GetPairValueAsString(const Key: string): string;
     /// <summary>
     /// Pobiera liczbow¹ wartoœæ (TJSONNumber) pary z kluczem "Key".
     /// Zwraca wartoœæ jako Integer. Sprawdza czy para jest dostêpna.
     /// </summary>
-    function GetPairValueAsInteger(const Key: string): integer;
+    function GetPairValueAsInteger(const Key: string): Integer;
     /// <summary>
     /// Pobiera warttoœæ pary JSON o kluczu Key. Traktujê j¹ jako tekst
     /// w formacie ISO Date (ISO8601) UTC i konwertuje j¹ do TDateTime
     /// </summary>
     function GetPairValueAsUtcDate(const Key: string): TDateTime;
     function IsValidIsoDateUtc(const Key: string): Boolean;
+    function IsValidateEmail(const Key: string): Boolean;
   end;
 
 implementation
 
 uses
-  System.DateUtils;
+  System.DateUtils,
+  Utils.General;
 
-function TJSONObjectHelper.IsPairAvaliableAndNotNull(const Key: string)
-  : Boolean;
+function TJSONObjectHelper.IsPairAvaliableAndNotNull(const Key: string): Boolean;
 begin
   Result := Assigned(Self.Values[Key]) and not Self.Values[Key].Null;
+end;
+
+function TJSONObjectHelper.IsValidateEmail(const Key: string): Boolean;
+begin
+  Result := IsPairAvaliableAndNotNull(Key) and
+    TValidateLibrary.CheckEmail(Self.Values[Key].Value);
 end;
 
 function TJSONObjectHelper.GetPairValueAsInteger(const Key: string): integer;

@@ -6,9 +6,11 @@ uses
   System.Classes, Vcl.StdCtrls, Vcl.Controls, System.Types, Vcl.Graphics,
   Winapi.Windows,
   System.JSON,
+  System.Generics.Collections,
   DataAccess.Books,
   Model.Book,
   Model.BookCollection;
+
 
 type
   { TODO 4: Too many responsibilities. Separate GUI from structures }
@@ -46,6 +48,7 @@ implementation
 uses
   System.SysUtils,
   DataAccess.Books.FireDAC,
+  Utils.General,
   Data.Main;
 
 constructor TBooksListBoxConfigurator.Create(AOwner: TComponent);
