@@ -1,0 +1,14 @@
+Proxy SQL (Interbase)
+
+  SQL_GetOrdersList = 'SELECT Orders.OrderID, ' +
+    '  Orders.CustomerID, Customers.CompanyName,  Orders.EmployeeID, ' +
+    '  Employees.FirstName||'' ''||Employees.LastName EmployeeName, ' +
+    '  Orders.OrderDate, Orders.RequiredDate, Orders.ShippedDate, ' +
+    '  Orders.ShipVia, Orders.Freight ' + // -
+    'FROM {id Orders} Orders ' + // -
+    '  INNER JOIN {id Employees} Employees ' +
+    '    ON Orders.EmployeeID = Employees.EmployeeID ' +
+    '  INNER JOIN {id Customers} Customers ' +
+    '    ON Orders.CustomerID = Customers.CustomerID ' +
+    'WHERE {year(OrderDate)} = :YEAR ' +  // -
+    'ORDER BY Orders.OrderID ';
