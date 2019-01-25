@@ -12,16 +12,21 @@ uses
 // with or without Book Collection?
 type
   TBook = class
-    status: string;
-    title: string;
-    isbn: string;
-    author: string;
-    releseDate: TDateTime;
-    pages: integer;
-    price: currency;
-    currency: string;
-    imported: TDateTime;
-    description: string;
+  private
+    FIsbn: string;
+    procedure SetIsbn(const Value: string);
+  public
+    Status: string;
+    Title: string;
+    Author: string;
+    ReleseDate: TDateTime;
+    Pages: integer;
+    Price: currency;
+    Currency: string;
+    Imported: TDateTime;
+    Description: string;
+    procedure Validate;
+    property Isbn: string read FIsbn write SetIsbn;
     constructor Create(Books: IBooksDAO); overload;
   end;
 
@@ -70,6 +75,7 @@ implementation
 uses
   System.SysUtils,
   DataAccess.Books.FireDAC,
+  Utils.General,
   Data.Main;
 
 constructor TBooksListBoxConfigurator.Create(AOwner: TComponent);
@@ -291,16 +297,40 @@ end;
 constructor TBook.Create(Books: IBooksDAO);
 begin
   inherited Create;
-  self.isbn := Books.fldISBN.Value;
-  self.title := Books.fldTitle.Value;
-  self.author := Books.fldAuthors.Value;
-  self.status := Books.fldStatus.Value;
-  self.releseDate := Books.fldReleseDate.Value;
-  self.pages := Books.fldPages.Value;
-  self.price := Books.fldPrice.Value;
-  self.currency := Books.fldCurrency.Value;
-  self.imported := Books.fldImported.Value;
-  self.description := Books.fldDescription.Value;
+  self.Isbn := Books.fldISBN.Value;
+  self.Title := Books.fldTitle.Value;
+  self.Author := Books.fldAuthors.Value;
+  self.Status := Books.fldStatus.Value;
+  self.ReleseDate := Books.fldReleseDate.Value;
+  self.Pages := Books.fldPages.Value;
+  self.Price := Books.fldPrice.Value;
+  self.Currency := Books.fldCurrency.Value;
+  self.Imported := Books.fldImported.Value;
+  self.Description := Books.fldDescription.Value;
+end;
+
+procedure TBook.SetIsbn(const Value: string);
+begin
+  FIsbn := Value;
+end;
+
+procedure TBook.Validate;
+var
+  lValidateInfoMessage: TStringList;
+begin
+  lValidateInfoMessage := TStringList.Create;
+  try
+    //Reguły walidacji dla książki
+    if not TValidateLibrary.IsNotEmpty(Isbn) then
+      lValidateInfoMessage.Add('Warość pola ISBN nie może być pusta!');
+    if not TValidateLibrary.CheckIBAN(Isbn) then
+      lValidateInfoMessage.Add('Warość pola ISBN ma nieprawidłowy format!');
+
+    if lValidateInfoMessage.Count <> 0 then
+      raise Exception.Create(lValidateInfoMessage.Text);
+  finally
+    lValidateInfoMessage.Free;
+  end;
 end;
 
 end.
