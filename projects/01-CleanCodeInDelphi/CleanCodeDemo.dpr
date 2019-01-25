@@ -10,7 +10,6 @@ uses
   Frame.Import in 'Frame.Import.pas' {FrameImport: TFrame},
   Utils.General in 'Utils.General.pas',
   Data.Main in 'Data.Main.pas' {DataModMain: TDataModule},
-  Utils.Messages in 'Utils.Messages.pas',
   Vcl.Themes,
   Vcl.Styles,
   DataAccess.Base in 'experimental\DataAccess.Base.pas',

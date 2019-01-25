@@ -8,6 +8,7 @@ uses
   Vcl.Forms, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Controls,
   ChromeTabs, ChromeTabsClasses, ChromeTabsTypes,
   Utils.General,
+  Messaging.EventBus,
   ExtGUI.ListBox.Books,
   Action.ImportFromWebService;
 
@@ -25,6 +26,7 @@ type
     tmrAppReady: TTimer;
     Splitter2: TSplitter;
     procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
     procedure btnImportClick(Sender: TObject);
     procedure ChromeTabs1ButtonCloseTabClick(Sender: TObject; ATab: TChromeTab;
       var Close: Boolean);
@@ -36,6 +38,8 @@ type
   private
     FBooksConfig: TBooksListBoxConfigurator;
     ImportFromWebService: TImportFromWebService;
+    procedure OnImportReaderReportLog (MessageID: integer;
+      const AMessagee: TEventMessage);
     procedure ResizeBooksListBoxesInsideGroupBox(aGroupBox: TGroupBox);
     function AddChromeTabAndCreateFrame(AFrameClass: TFrameClass;
       ACaption: string): TFrame;
@@ -69,15 +73,33 @@ uses
   Helper.TDBGrid,
   Helper.TApplication,
   Helper.TWinControl,
-  Helper.TJSONObject, Messaging.EventBus;
+  Helper.TJSONObject;
 
 
 var
   ShowBooksGrid: Boolean = False;
 
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+  ImportFromWebService := TImportFromWebService.Create(Self);
+  pnMain.Caption := '';
+  TEventBus._Register(EB_ImportReaderReports_LogInfo,OnImportReaderReportLog);
+end;
+
+procedure TForm1.FormDestroy(Sender: TObject);
+begin
+  TEventBus._Unregister(EB_ImportReaderReports_LogInfo,OnImportReaderReportLog);
+end;
+
 procedure TForm1.FormResize(Sender: TObject);
 begin
   ResizeBooksListBoxesInsideGroupBox(GroupBox1);
+end;
+
+procedure TForm1.OnImportReaderReportLog(MessageID: integer;
+      const AMessagee: TEventMessage);
+begin
+  Caption := AMessagee.TagString;
 end;
 
 procedure TForm1.btnImportClick(Sender: TObject);
@@ -90,10 +112,6 @@ var
 begin
   ImportFromWebService.BooksConfig := FBooksConfig;
   ImportFromWebService.DataModMain := DataModMain;
-  ImportFromWebService.OnAfterExecute := procedure()
-    begin
-      Caption := ImportFromWebService.TagString;
-    end;
   ImportFromWebService.Execute;
 
   // ----------------------------------------------------------
@@ -161,12 +179,6 @@ begin
   end;
 end;
 
-procedure TForm1.FormCreate(Sender: TObject);
-begin
-  ImportFromWebService := TImportFromWebService.Create(Self);
-  pnMain.Caption := '';
-end;
-
 procedure TForm1.ResizeBooksListBoxesInsideGroupBox(aGroupBox: TGroupBox);
 begin
   lbxBooksReaded.Height :=
@@ -206,7 +218,6 @@ begin
   // ----------------------------------------------------------
   frm := AddChromeTabAndCreateFrame(TFrameWelcome, 'Welcome') as TFrameWelcome;
   // ----------------------------------------------------------
-  DataModMain.OnLogInfo := frm.AddInfo;
 
 
   DataModMain.VerifyAndConnectToDatabase;
