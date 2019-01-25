@@ -33,7 +33,6 @@ type
       write SetBooksConfig;
     property DataModMain: TDataModMain read FDataModMain write SetDataModMain;
     property OnAfterExecute: TProc read FOnAfterExecute write SetOnAfterExecute;
-    property TagString: String read FTagString write SetTagString;
     procedure Execute;
   end;
 
@@ -48,7 +47,7 @@ uses
   Frame.Import,
   ClientAPI.Books, ClientAPI.Readers,
   Helper.TJSONObject, Helper.DataSet, Helper.TApplication, Helper.Variant,
-  Utils.General, Model.ReaderReport;
+  Utils.General, Model.ReaderReport, Messaging.EventBus, Consts.Application;
 
 function BooksToDateTime(const s: string): TDateTime;
 const
@@ -138,6 +137,7 @@ var
   Book: TBook;
   Ratings: array of string;
   ReaderId: Variant;
+  AMessage: TEventMessage;
 begin
   jsData := ImportReaderReportsFromWebService(Client_API_Token);
   try
@@ -179,7 +179,8 @@ begin
     end;
     if Application.IsDeveloperMode then
     begin
-      TagString := string.Join(' ,', Ratings);
+      AMessage.TagString := string.Join(' ,', Ratings);
+      TEventBus._Post (EB_ImportReaderReports_LogInfo, AMessage);
       if Assigned(FOnAfterExecute) then
         FOnAfterExecute();
     end;

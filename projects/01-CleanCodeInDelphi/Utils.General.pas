@@ -7,7 +7,6 @@ uses
 
 type
   TFrameClass = class of Vcl.Forms.TFrame;
-  TNotifyLogInfo = procedure(Level: Integer; const Msg: string; Show: Boolean) of object;
 
   TValidateLibrary = class
     class function CheckEmail(const Value: string): Boolean;

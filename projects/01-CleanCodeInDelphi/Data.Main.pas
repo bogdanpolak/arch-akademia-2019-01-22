@@ -21,8 +21,7 @@ uses
   FireDAC.Comp.DataSet, FireDAC.DatS, FireDAC.DApt.Intf,
   FireDAC.DApt, FireDAC.Stan.Async,
   // ------------------------------------------------------------------------
-  Utils.General,
-  Utils.Messages;
+  Utils.General;
 
 type
   TDataModMain = class(TDataModule)
@@ -32,17 +31,14 @@ type
     dsReports: TFDQuery;
     FDPhysSQLiteDriverLink1: TFDPhysSQLiteDriverLink;
   private
-    FOnLogInfo: TNotifyLogInfo;
     function DBVersionToString(VerDB: Integer): string;
-    procedure LogInfo(level: Integer; const Msg: string;
-      show: boolean);
+    procedure LogInfoStd (level: Integer; const Msg: string);
+    procedure LogInfoDev (level: Integer; const Msg: string);
     procedure OpenDataSets;
-    procedure SetOnLogInfo(const Value: TNotifyLogInfo);
     procedure ConnectToDataBase;
     function GetDatabaseVersion: Variant;
     procedure LogDatabaseVersion;
   public
-    property OnLogInfo: TNotifyLogInfo read FOnLogInfo write SetOnLogInfo;
     procedure VerifyAndConnectToDatabase;
     function FindReaderByEmil(const email: string): Variant;
   end;
@@ -60,7 +56,8 @@ uses
   System.StrUtils,
   ClientAPI.Books,
   Utils.CipherAES128,
-  Consts.Application;
+  Consts.Application,
+  Messaging.EventBus;
 
 const
   SecureKey = 'delphi-is-the-best';
@@ -108,8 +105,8 @@ begin
       else
         msg1 := SDBConnectionError
       end;
-      LogInfo(0, msg1, True);
-      LogInfo(1, E.Message, False);
+      LogInfoStd(0, msg1);
+      LogInfoDev(1, E.Message);
       Raise
     end;
   end;
@@ -149,8 +146,8 @@ begin
     on E: EFDDBEngineException do
     begin
       Msg := IfThen(E.kind = ekObjNotExists, SDBRequireCreate, SDBErrorSelect);
-      LogInfo(0, Msg, True);
-      LogInfo(1, E.Message, False);
+      LogInfoStd(0, Msg);
+      LogInfoDev(1, E.Message);
       Raise;
     end;
   end;
@@ -163,18 +160,31 @@ begin
   VersionNr := GetDatabaseVersion;
   if VersionNr <> ExpectedDatabaseVersionNr then
   begin
-    LogInfo(0, StrNotSupportedDBVersion, True);
-    LogInfo(1, StrExpectedDatabseVersion + DBVersionToString
-      (ExpectedDatabaseVersionNr), True);
-    LogInfo(1, StrAktualDatabseVersion + DBVersionToString(VersionNr), True);
+    LogInfoStd(0, StrNotSupportedDBVersion);
+    LogInfoStd(1, StrExpectedDatabseVersion + DBVersionToString
+      (ExpectedDatabaseVersionNr));
+    LogInfoStd(1, StrAktualDatabseVersion + DBVersionToString(VersionNr));
   end;
 end;
 
-procedure TDataModMain.LogInfo(level: Integer;
-  const Msg: string; show: boolean);
+procedure TDataModMain.LogInfoStd(level: Integer; const Msg: string);
+var
+  AMessage: TEventMessage;
 begin
-  if Assigned(OnLogInfo) then
-    OnLogInfo(Level, Msg, Show);
+  AMessage.TagString := Msg;
+  AMessage.TagInt := Level;
+  AMessage.TagBoolean := False;
+  TEventBus._Post(EB_DBCONNECTION_AddInfo, AMessage);
+end;
+
+procedure TDataModMain.LogInfoDev(level: Integer; const Msg: string);
+var
+  AMessage: TEventMessage;
+begin
+  AMessage.TagString := Msg;
+  AMessage.TagInt := Level;
+  AMessage.TagBoolean := True;
+  TEventBus._Post(EB_DBCONNECTION_AddInfo, AMessage);
 end;
 
 procedure TDataModMain.OpenDataSets;
@@ -182,11 +192,6 @@ begin
   dsBooks.Open();
   dsReaders.Open();
   dsReports.Open();
-end;
-
-procedure TDataModMain.SetOnLogInfo(const Value: TNotifyLogInfo);
-begin
-  FOnLogInfo := Value;
 end;
 
 end.
