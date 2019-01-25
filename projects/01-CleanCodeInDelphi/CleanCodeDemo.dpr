@@ -27,7 +27,8 @@ uses
   Helper.Variant in 'Helper.Variant.pas',
   Action.ImportFromWebService in 'Action.ImportFromWebService.pas',
   Model.Book in 'Model.Book.pas',
-  Model.BookCollection in 'Model.BookCollection.pas';
+  Model.BookCollection in 'Model.BookCollection.pas',
+  Model.ReaderReport in 'Model.ReaderReport.pas';
 
 {$R *.res}
 

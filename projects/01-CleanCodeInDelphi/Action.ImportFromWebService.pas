@@ -11,22 +11,10 @@ uses
   Data.Main,
   Model.Book;
 
-type
-  TReaderReport = record
-    Email: string;
-    FirstName: string;
-    LastName: string;
-    Company: string;
-    BookISBN: string;
-    BookTitle: string;
-    Rating: Integer;
-    Oppinion: string;
-    ReportedDate: TDateTime;
-    procedure Validate;
-    procedure LoadFromJSON(AJSONReport: TJSONObject);
-  end;
 
-  TImportFromWebService = class (TComponent)
+
+type
+  TImportFromWebService = class(TComponent)
   private
     FBooksConfig: TBooksListBoxConfigurator;
     FDataModMain: TDataModMain;
@@ -36,12 +24,13 @@ type
     procedure SetDataModMain(const Value: TDataModMain);
     procedure SetOnAfterExecute(const Value: TProc);
     procedure SetTagString(const Value: string);
+
     procedure ImportBooks;
     procedure ImportReaderReports;
-    function CreateBookFromJSON(AJSONBook: TJSONObject): TBook;
-
+    procedure AddNewBookToDataModuleFromWeb(jsBooks: TJSONArray);
   public
-    property BooksConfig: TBooksListBoxConfigurator read FBooksConfig write SetBooksConfig;
+    property BooksConfig: TBooksListBoxConfigurator read FBooksConfig
+      write SetBooksConfig;
     property DataModMain: TDataModMain read FDataModMain write SetDataModMain;
     property OnAfterExecute: TProc read FOnAfterExecute write SetOnAfterExecute;
     property TagString: String read FTagString write SetTagString;
@@ -59,7 +48,7 @@ uses
   Frame.Import,
   ClientAPI.Books, ClientAPI.Readers,
   Helper.TJSONObject, Helper.DataSet, Helper.TApplication, Helper.Variant,
-  Utils.General;
+  Utils.General, Model.ReaderReport;
 
 function BooksToDateTime(const s: string): TDateTime;
 const
@@ -67,44 +56,27 @@ const
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
 var
   m: string;
-  y: string;
+  Y: string;
   i: Integer;
   mm: Integer;
   yy: Integer;
 begin
   m := s.Substring(0, 3);
-  y := s.Substring(4);
+  Y := s.Substring(4);
   mm := 0;
   for i := 1 to 12 do
     if months[i].ToUpper = m.ToUpper then
       mm := i;
   if mm = 0 then
     raise ERangeError.Create('Incorect mont name in the date: ' + s);
-  yy := y.ToInteger();
+  yy := Y.ToInteger();
   Result := EncodeDate(yy, mm, 1);
 end;
 
 const
   Client_API_Token = '20be805d-9cea27e2-a588efc5-1fceb84d-9fb4b67c';
 
-
-{ TImportFormWebService }
-
-function TImportFromWebService.CreateBookFromJSON(AJSONBook: TJSONObject): TBook;
-begin
-  Result := TBook.Create;
-  Result.Status := AJSONBook.Values['status'].Value;
-  Result.Title := AJSONBook.Values['title'].Value;
-  Result.Isbn := AJSONBook.Values['isbn'].Value;
-  Result.Author := AJSONBook.Values['author'].Value;
-  Result.ReleseDate := BooksToDateTime(AJSONBook.Values['date'].Value);
-  Result.Pages := (AJSONBook.Values['pages'] as TJSONNumber).AsInt;
-  Result.Price := StrToCurr(AJSONBook.Values['price'].Value);
-  Result.Currency := AJSONBook.Values['currency'].Value;
-  Result.Description := AJSONBook.Values['description'].Value;
-  Result.Imported := Now();
-  Result.Validate;
-end;
+  { TImportFormWebService }
 
 
 procedure TImportFromWebService.Execute;
@@ -115,90 +87,99 @@ end;
 
 procedure TImportFromWebService.ImportBooks;
 var
-  I: Integer;
-  LBook, LFindBook: TBook;
   jsBooks: TJSONArray;
 begin
-  // Import new Books data from OpenAPI
   jsBooks := ImportBooksFromWebService(Client_API_Token);
   try
-    for i := 0 to jsBooks.Count - 1 do
-    begin
-      LBook := CreateBookFromJSON(jsBooks.Items[i] as TJSONObject);
-      LFindBook := FBooksConfig.GetBookList(blkAll).FindByISBN(LBook.isbn);
-
-      if not Assigned(LFindBook) then
-      begin
-        FBooksConfig.InsertNewBook(LBook);
-        // ----------------------------------------------------------------
-        // Append report into the database:
-        // Fields: ISBN, Title, Authors, Status, ReleseDate, Pages, Price,
-        // Currency, Imported, Description
-        DataModMain.dsBooks.InsertRecord([LBook.Isbn, LBook.Title, LBook.Author,
-          LBook.Status, LBook.ReleseDate, LBook.Pages, LBook.Price,
-          LBook.Currency, LBook.Imported, LBook.Description]);
-      end
-      else
-        LBook.Free;
-    end;
+    AddNewBookToDataModuleFromWeb(jsBooks);
   finally
     jsBooks.Free;
   end;
 end;
 
+procedure TImportFromWebService.AddNewBookToDataModuleFromWeb
+  (jsBooks: TJSONArray);
+var
+  jsBook: TJSONObject;
+  b: TBook;
+  b2: TBook;
+  i: Integer;
+begin
+  for i := 0 to jsBooks.Count - 1 do
+  begin
+    jsBook := jsBooks.Items[i] as TJSONObject;
+    b := TBook.Create();
+    // TODO: Dodaæ try-finnaly oraz zwalanie b.Free;
+    // czyli b przekazywane do InsertNewBook musi byæ sklonowane
+    b.LoadFromJSON (jsBook);
+    b.Validate;
+    b2 := FBooksConfig.GetBookList(blkAll).FindByISBN(b.isbn);
+    if not Assigned(b2) then
+    begin
+      FBooksConfig.InsertNewBook(b);
+      // ----------------------------------------------------------------
+      // Append report into the database:
+      // Fields: ISBN, Title, Authors, Status, ReleseDate, Pages, Price,
+      // Currency, Imported, Description
+      DataModMain.dsBooks.InsertRecord([b.isbn, b.title, b.author, b.status,
+        b.releseDate, b.pages, b.price, b.currency, b.imported, b.description]);
+    end
+    else
+      b.Free;
+  end;
+end;
+
+
 procedure TImportFromWebService.ImportReaderReports;
 var
   jsData: TJSONArray;
   I: Integer;
-  lReaderReport: TReaderReport;
-  lBook: TBook;
-  lRatings: array of string;
-  lReaderId: Variant;
+  ReaderReport: TReaderReport;
+  Book: TBook;
+  Ratings: array of string;
+  ReaderId: Variant;
 begin
-  // Import new Reader Reports data from OpenAPI
-  // - Load JSON from WebService
-  // - Validate JSON and insert new a Readers into the Database
   jsData := ImportReaderReportsFromWebService(Client_API_Token);
   try
     for i := 0 to jsData.Count - 1 do
     begin
+      // ----------------------------------------------------
+      // Validate ReadeReport (JSON) and insert into the Database
       // Read JSON object
-      lReaderReport.LoadFromJSON(jsData.Items[i] as TJSONObject);
-
-      // Locate book by ISBN
-      lBook := FBooksConfig.GetBookList(blkAll).FindByISBN(lReaderReport.BookISBN);
-      if not Assigned(lBook) then
-        raise Exception.Create('Invalid book isbn');
-      // ----------------------------------------------------------------
-      // Find the Reader in then database using an email address
-      lReaderId := DataModMain.FindReaderByEmil(lReaderReport.Email);
-      // ----------------------------------------------------------------
-      //
-      // Append a new reader into the database if requred:
-      if lReaderId.IsNull then
+      ReaderReport := TReaderReport.Create;
+      try
+      ReaderReport.LoadFromJSON(jsData.Items[i] as TJSONObject);
+      Book := FBooksConfig.GetBookList(blkAll).FindByISBN(ReaderReport.BookISBN);
+      if Assigned(Book) then
       begin
-        lReaderId := DataModMain.dsReaders.GetMaxValue('ReaderId') + 1;
-
+      ReaderId := DataModMain.FindReaderByEmil(ReaderReport.Email);
+      if ReaderId.IsNull then
+      begin
+        ReaderId := DataModMain.dsReaders.GetMaxValue('ReaderId') + 1;
         // Fields: ReaderId, FirstName, LastName, Email, Company, BooksRead,
         // LastReport, ReadersCreated
-        DataModMain.dsReaders.AppendRecord([lReaderId, lReaderReport.FirstName,
-          lReaderReport.LastName, lReaderReport.Email, lReaderReport.Company, 1,
-          lReaderReport.ReportedDate, Now()]);
+        DataModMain.dsReaders.AppendRecord([ReaderId, ReaderReport.FirstName,
+          ReaderReport.LastName, ReaderReport.Email, ReaderReport.Company, 1,
+          ReaderReport.ReportedDate, Now()]);
       end;
-
       // Append report into the database:
       // Fields: ReaderId, ISBN, Rating, Oppinion, Reported
-      DataModMain.dsReports.AppendRecord([lReaderId, lReaderReport.BookISBN,
-        lReaderReport.Rating, lReaderReport.Oppinion,
-        lReaderReport.ReportedDate]);
+      DataModMain.dsReports.AppendRecord([ReaderId, ReaderReport.BookISBN,
+        ReaderReport.Rating, ReaderReport.Oppinion,
+        ReaderReport.ReportedDate]);
       // ----------------------------------------------------------------
       if Application.IsDeveloperMode then
-        Insert([lReaderReport.Rating.ToString], lRatings, maxInt);
+        Insert([ReaderReport.Rating.ToString], Ratings, maxInt);
+      end
+      else
+        raise Exception.Create('Invalid book isbn');
+    finally
+      ReaderReport.Free;
     end;
-    // ----------------------------------------------------------------
+    end;
     if Application.IsDeveloperMode then
     begin
-      TagString := string.Join(' ,', lRatings);
+      TagString := string.Join(' ,', Ratings);
       if Assigned(FOnAfterExecute) then
         FOnAfterExecute();
     end;
@@ -225,38 +206,6 @@ end;
 procedure TImportFromWebService.SetTagString(const Value: String);
 begin
   FTagString := Value;
-end;
-
-
-{ TReaderReport }
-
-procedure TReaderReport.LoadFromJSON(AJSONReport: TJSONObject);
-begin
-  if AJSONReport.IsValidIsoDateUtc('created') then
-    ReportedDate := AJSONReport.GetPairValueAsUtcDate('created')
-  else
-    raise Exception.Create('Invalid date. Expected ISO format');
-
-  if not AJSONReport.IsValidateEmail('email') then
-    raise Exception.Create('Invalid e-mail addres');
-
-  Email := AJSONReport.Values['email'].Value;
-  FirstName := AJSONReport.GetPairValueAsString('firstname');
-  LastName := AJSONReport.GetPairValueAsString('lastname');
-  Company := AJSONReport.GetPairValueAsString('company');
-  BookISBN := AJSONReport.GetPairValueAsString('book-isbn');
-  BookTitle := AJSONReport.GetPairValueAsString('book-title');
-  Rating := AJSONReport.GetPairValueAsInteger('rating');
-  Oppinion := AJSONReport.GetPairValueAsString('oppinion');
-
-  Validate;
-end;
-
-procedure TReaderReport.Validate;
-begin
-  //Regu³y walidacji TReaderReport
-  if not TValidateLibrary.CheckEmail(Email) then
-    raise Exception.Create('Invalid email addres!');
 end;
 
 end.

@@ -3,6 +3,7 @@ unit Model.Book;
 interface
 
 uses
+  System.JSON,
   DataAccess.Books;
 
 Type
@@ -25,6 +26,7 @@ Type
     procedure Validate;
     property Isbn: string read FIsbn write SetIsbn;
     constructor Create(Books: IBooksDAO); overload;
+    procedure LoadFromJSON (jsBook: TJSONObject);
   end;
 
 implementation
@@ -49,6 +51,20 @@ begin
   self.currency := Books.fldCurrency.Value;
   self.imported := Books.fldImported.Value;
   self.description := Books.fldDescription.Value;
+end;
+
+procedure TBook.LoadFromJSON(jsBook: TJSONObject);
+begin
+  Status := jsBook.Values['status'].Value;
+  Title := jsBook.Values['title'].Value;
+  Isbn := jsBook.Values['isbn'].Value;
+  Author := jsBook.Values['author'].Value;
+  // ReleseDate := BooksToDateTime(jsBook.Values['date'].Value);
+  Pages := (jsBook.Values['pages'] as TJSONNumber).AsInt;
+  Price := StrToCurr(jsBook.Values['price'].Value);
+  Currency := jsBook.Values['currency'].Value;
+  Description := jsBook.Values['description'].Value;
+  Imported := Now();
 end;
 
 procedure TBook.SetIsbn(const Value: string);
